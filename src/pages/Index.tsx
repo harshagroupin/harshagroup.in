@@ -67,7 +67,7 @@ export default function Index() {
             Invest | Lease | Grow with Harsha Group — Your trusted partner for premium commercial real estate in Indirapuram.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center" style={{ animation: "fade-up 0.8s ease-out 0.4s both" }}>
-            <Link to="/office-space">
+            <Link to="/our-spaces">
               <Button className="gold-gradient text-primary-foreground px-8 h-12 text-base font-semibold hover:opacity-90 gold-glow-sm">
                 Explore Properties
               </Button>

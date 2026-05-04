@@ -6,10 +6,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import { Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import About from "./pages/About";
-import OfficeSpace from "./pages/OfficeSpace";
-import Shops from "./pages/Shops";
+import OurSpaces from "./pages/OurSpaces";
 import Gallery from "./pages/Gallery";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
@@ -26,8 +26,10 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/about" element={<About />} />
-          <Route path="/office-space" element={<OfficeSpace />} />
-          <Route path="/shops" element={<Shops />} />
+          <Route path="/our-spaces" element={<OurSpaces />} />
+          {/* Backward-compatible redirects so old links / bookmarks don't 404 */}
+          <Route path="/office-space" element={<Navigate to="/our-spaces" replace />} />
+          <Route path="/shops" element={<Navigate to="/our-spaces" replace />} />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="*" element={<NotFound />} />
