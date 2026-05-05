@@ -1,0 +1,2 @@
+-- This file has been replaced by full_database_schema.sql
+-- Please use full_database_schema.sql instead.

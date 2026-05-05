@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Building2, Shield, MapPin, TrendingUp, Star } from "lucide-react";
@@ -6,11 +7,13 @@ import PropertyCard from "@/components/PropertyCard";
 import ContactForm from "@/components/ContactForm";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useCounter } from "@/hooks/useCounter";
+import { fetchHeroContent, fetchProperties, type HeroContent, type Property } from "@/lib/cms";
 import heroImg from "@/assets/hero-mall.jpg";
 import officeImg1 from "@/assets/office-space-1.jpg";
 import shopImg1 from "@/assets/shop-space-1.jpg";
 import buildingImg from "@/assets/building-exterior.jpg";
 import officeImg2 from "@/assets/office-space-2.jpg";
+
 
 const stats = [
   { label: "Projects Completed", value: 50, suffix: "+" },
@@ -43,13 +46,47 @@ function StatCounter({ value, suffix, format, label, start }: { value: number; s
 
 export default function Index() {
   const statsReveal = useScrollReveal();
+  const [hero, setHero] = useState<HeroContent | null>(null);
+  const [cmsProperties, setCmsProperties] = useState<Property[] | null>(null);
+
+  useEffect(() => {
+    fetchHeroContent().then(({ data }) => { if (data) setHero(data); });
+    fetchProperties().then(({ data }) => {
+      const filtered = (data || []).filter((p) => p.display_location === "homepage");
+      setCmsProperties(filtered.length > 0 ? filtered : null);
+    });
+  }, []);
+
+  // Use CMS content if available, otherwise fallback to defaults
+  const heroHeading = hero?.heading || "Premium Commercial Spaces That Drive Business Growth";
+  const heroSubheading = hero?.subheading || "Invest | Lease | Grow with Harsha Group — Your trusted partner for premium commercial real estate in Indirapuram.";
+  const ctaPrimary = hero?.cta_primary_text || "Explore Properties";
+  const ctaSecondary = hero?.cta_secondary_text || "Contact Now";
+  const showVideo = hero?.media_type === "video" && hero?.video_url;
 
   return (
     <main>
       {/* Hero */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
-          <img src={heroImg} alt="Premium commercial spaces by Harsha Group" className="w-full h-full object-cover" width={1920} height={1080} />
+          {showVideo ? (
+            <video
+              src={hero.video_url!}
+              className="w-full h-full object-cover"
+              autoPlay
+              muted
+              loop
+              playsInline
+            />
+          ) : (
+            <img
+              src={hero?.image_url || heroImg}
+              alt="Premium commercial spaces by Harsha Group"
+              className="w-full h-full object-cover"
+              width={1920}
+              height={1080}
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
         </div>
 
@@ -60,21 +97,24 @@ export default function Index() {
 
         <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
           <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6 animate-fade-up">
-            Premium Commercial Spaces That{" "}
-            <span className="gold-text">Drive Business Growth</span>
+            {heroHeading.includes("Drive Business Growth") ? (
+              <>Premium Commercial Spaces That{" "}<span className="gold-text">Drive Business Growth</span></>
+            ) : (
+              <span dangerouslySetInnerHTML={{ __html: heroHeading.replace(/\*\*(.*?)\*\*/g, '<span class="gold-text">$1</span>') }} />
+            )}
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto" style={{ animation: "fade-up 0.8s ease-out 0.2s both" }}>
-            Invest | Lease | Grow with Harsha Group — Your trusted partner for premium commercial real estate in Indirapuram.
+            {heroSubheading}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center" style={{ animation: "fade-up 0.8s ease-out 0.4s both" }}>
             <Link to="/our-spaces">
               <Button className="gold-gradient text-primary-foreground px-8 h-12 text-base font-semibold hover:opacity-90 gold-glow-sm">
-                Explore Properties
+                {ctaPrimary}
               </Button>
             </Link>
             <Link to="/contact">
               <Button variant="outline" className="border-primary/50 text-foreground px-8 h-12 text-base hover:bg-primary/10">
-                Contact Now
+                {ctaSecondary}
               </Button>
             </Link>
           </div>
@@ -92,17 +132,34 @@ export default function Index() {
               <p className="text-muted-foreground max-w-2xl mx-auto">Handpicked premium commercial spaces for discerning investors and businesses.</p>
             </div>
           </ScrollReveal>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              { image: officeImg1, title: "Premium Office Suite A", location: "Harsha City Mall, Indirapuram", price: "₹45,000/mo", area: "1,200 sq ft", type: "Office" },
-              { image: shopImg1, title: "Luxury Retail Outlet", location: "Ground Floor, Harsha Mall", price: "₹80,000/mo", area: "800 sq ft", type: "Shop" },
-              { image: buildingImg, title: "Corporate Office Tower", location: "Shakti Khand 2, Ghaziabad", price: "₹1.2 Cr", area: "3,500 sq ft", type: "Office" },
-              { image: officeImg2, title: "Co-Working Space", location: "Harsha Business Center", price: "₹25,000/mo", area: "500 sq ft", type: "Office" },
-            ].map((p, i) => (
-              <ScrollReveal key={i} delay={i * 0.1}>
-                <PropertyCard {...p} />
-              </ScrollReveal>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {cmsProperties ? (
+              cmsProperties.map((p, i) => (
+                <ScrollReveal key={p.id} delay={i * 0.1}>
+                  <PropertyCard
+                    image={p.image_url || ""}
+                    video={p.video_url}
+                    title={p.title}
+                    location={p.location}
+                    price={p.price}
+                    area={p.area}
+                    type={p.type}
+                    features={p.features}
+                  />
+                </ScrollReveal>
+              ))
+            ) : (
+              [
+                { image: officeImg1, title: "Premium Office Suite A", location: "Harsha City Mall, Indirapuram", price: "₹45,000/mo", area: "1,200 sq ft", type: "Office" },
+                { image: shopImg1, title: "Luxury Retail Outlet", location: "Ground Floor, Harsha Mall", price: "₹80,000/mo", area: "800 sq ft", type: "Shop" },
+                { image: buildingImg, title: "Corporate Office Tower", location: "Shakti Khand 2, Ghaziabad", price: "₹1.2 Cr", area: "3,500 sq ft", type: "Office" },
+                { image: officeImg2, title: "Co-Working Space", location: "Harsha Business Center", price: "₹25,000/mo", area: "500 sq ft", type: "Office" },
+              ].map((p, i) => (
+                <ScrollReveal key={i} delay={i * 0.1}>
+                  <PropertyCard {...p} />
+                </ScrollReveal>
+              ))
+            )}
           </div>
         </div>
       </section>
