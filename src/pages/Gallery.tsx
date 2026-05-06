@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import ScrollReveal from "@/components/ScrollReveal";
-import { X, Play, Loader2 } from "lucide-react";
+import { X, Play, Loader2, ImageIcon } from "lucide-react";
 import { fetchGalleryImages, type GalleryImage } from "@/lib/cms";
 
 // Static fallback
@@ -41,13 +41,15 @@ export default function Gallery() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchGalleryImages().then(({ data }) => {
-      setCmsItems(data && data.length > 0 ? data : null);
+    fetchGalleryImages().then(({ data, error }) => {
+      if (error) {
+        setCmsItems(null);
+      } else {
+        setCmsItems(data || []);
+      }
       setLoading(false);
     });
   }, []);
-
-  const hasCms = cmsItems && cmsItems.length > 0;
 
   return (
     <main className="pt-20">
@@ -66,43 +68,50 @@ export default function Gallery() {
             <div className="flex justify-center py-20">
               <Loader2 className="animate-spin text-primary" size={32} />
             </div>
-          ) : hasCms ? (
-            /* CMS Gallery */
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {cmsItems.map((item, i) => (
-                <ScrollReveal key={item.id} delay={i * 0.05}>
-                  <div
-                    className="relative overflow-hidden rounded-xl cursor-pointer group aspect-[4/3]"
-                    onClick={() => setLightbox(i)}
-                  >
-                    {item.media_type === "video" && item.video_url ? (
-                      <>
-                        {getYoutubeThumbnail(item.video_url) ? (
-                          <img src={getYoutubeThumbnail(item.video_url)!} alt={item.alt_text} loading="lazy" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                        ) : (
-                          <div className="w-full h-full bg-blue-950/20 flex items-center justify-center">
-                            <Play size={40} className="text-blue-400/40" />
+          ) : cmsItems !== null ? (
+            cmsItems.length > 0 ? (
+              /* CMS Gallery */
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {cmsItems.map((item, i) => (
+                  <ScrollReveal key={item.id} delay={i * 0.05}>
+                    <div
+                      className="relative overflow-hidden rounded-xl cursor-pointer group aspect-[4/3]"
+                      onClick={() => setLightbox(i)}
+                    >
+                      {item.media_type === "video" && item.video_url ? (
+                        <>
+                          {getYoutubeThumbnail(item.video_url) ? (
+                            <img src={getYoutubeThumbnail(item.video_url)!} alt={item.alt_text} loading="lazy" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                          ) : (
+                            <div className="w-full h-full bg-blue-950/20 flex items-center justify-center">
+                              <Play size={40} className="text-blue-400/40" />
+                            </div>
+                          )}
+                          <div className="absolute top-3 right-3 px-2 py-1 rounded-full text-[10px] font-bold bg-blue-600/80 text-white flex items-center gap-1">
+                            <Play size={10} className="fill-current" /> Video
                           </div>
-                        )}
-                        <div className="absolute top-3 right-3 px-2 py-1 rounded-full text-[10px] font-bold bg-blue-600/80 text-white flex items-center gap-1">
-                          <Play size={10} className="fill-current" /> Video
-                        </div>
-                      </>
-                    ) : (
-                      <img
-                        src={item.image_url}
-                        alt={item.alt_text}
-                        loading="lazy"
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      />
-                    )}
-                    <div className="absolute inset-0 bg-background/0 group-hover:bg-background/30 transition-colors duration-300 flex items-center justify-center">
-                      <span className="opacity-0 group-hover:opacity-100 transition-opacity text-foreground font-medium">View</span>
+                        </>
+                      ) : (
+                        <img
+                          src={item.image_url}
+                          alt={item.alt_text}
+                          loading="lazy"
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        />
+                      )}
+                      <div className="absolute inset-0 bg-background/0 group-hover:bg-background/30 transition-colors duration-300 flex items-center justify-center">
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity text-foreground font-medium">View</span>
+                      </div>
                     </div>
-                  </div>
-                </ScrollReveal>
-              ))}
-            </div>
+                  </ScrollReveal>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 text-muted-foreground bg-secondary/20 rounded-xl border border-border/40">
+                <ImageIcon size={48} className="mx-auto mb-4 opacity-30" />
+                <p className="text-lg">No gallery images currently listed.</p>
+              </div>
+            )
           ) : (
             /* Fallback static gallery */
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -138,7 +147,7 @@ export default function Gallery() {
           <button className="absolute top-6 right-6 text-foreground hover:text-primary transition-colors" onClick={() => setLightbox(null)}>
             <X size={32} />
           </button>
-          {hasCms ? (
+          {cmsItems !== null && cmsItems.length > 0 ? (
             (() => {
               const item = cmsItems[lightbox];
               if (item.media_type === "video" && item.video_url) {

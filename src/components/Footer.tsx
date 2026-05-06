@@ -3,17 +3,25 @@ import { MapPin, Phone, Mail } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="bg-card/60 border-t border-border/30 py-16 px-4 md:px-8">
+    <footer className="bg-background border-t border-border/50 py-16 px-4 md:px-8">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-10">
         <div>
-          <h3 className="font-serif text-2xl font-bold gold-text mb-4">Harsha Group</h3>
+          <div className="flex items-center gap-3 mb-4">
+            <img src="/logo.png" alt="Harsha Group Logo" className="w-12 h-12 object-contain" />
+            <div className="flex flex-col justify-center">
+              <span className="font-serif text-xl font-bold tracking-tight text-foreground leading-none">
+                <span className="gold-text">Harsha</span> Group
+              </span>
+              <span className="text-[11px] text-muted-foreground uppercase tracking-widest leading-none mt-1.5 font-medium">Real Estate</span>
+            </div>
+          </div>
           <p className="text-muted-foreground text-sm leading-relaxed">
             Premium commercial real estate solutions in Indirapuram, Ghaziabad. Your trusted partner for shops, offices, and retail spaces.
           </p>
         </div>
 
         <div>
-          <h4 className="font-semibold text-foreground mb-4">Quick Links</h4>
+          <h4 className="font-semibold tracking-tight text-foreground mb-4">Quick Links</h4>
           <div className="flex flex-col gap-2">
             {[
               { to: "/", label: "Home" },
@@ -30,7 +38,7 @@ export default function Footer() {
         </div>
 
         <div>
-          <h4 className="font-semibold text-foreground mb-4">Services</h4>
+          <h4 className="font-semibold tracking-tight text-foreground mb-4">Services</h4>
           <div className="flex flex-col gap-2 text-sm text-muted-foreground">
             <span>Commercial Leasing</span>
             <span>Office Spaces</span>
@@ -41,7 +49,7 @@ export default function Footer() {
         </div>
 
         <div>
-          <h4 className="font-semibold text-foreground mb-4">Contact</h4>
+          <h4 className="font-semibold tracking-tight text-foreground mb-4">Contact</h4>
           <div className="flex flex-col gap-3 text-sm text-muted-foreground">
             <div className="flex items-start gap-2">
               <MapPin size={16} className="text-primary mt-0.5 shrink-0" />
@@ -59,7 +67,7 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-border/30 text-center text-sm text-muted-foreground">
+      <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-border/50 text-center text-sm text-muted-foreground">
         © {new Date().getFullYear()} Harsha Group. All rights reserved.
       </div>
     </footer>

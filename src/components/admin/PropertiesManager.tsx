@@ -3,6 +3,7 @@ import {
   fetchProperties,
   upsertProperty,
   deleteProperty,
+  resolveImageUrl,
   type Property,
 } from "@/lib/cms";
 import { Button } from "@/components/ui/button";
@@ -203,8 +204,8 @@ export default function PropertiesManager() {
 
               {/* Thumbnail */}
               <div className="relative w-36 h-28 flex-shrink-0">
-                {p.image_url ? (
-                  <img src={p.image_url} alt={p.title} className="w-full h-full object-cover" />
+                {resolveImageUrl(p.image_url) ? (
+                  <img src={resolveImageUrl(p.image_url)!} alt={p.title} className="w-full h-full object-cover" />
                 ) : p.video_url ? (
                   <div className="w-full h-full bg-blue-950/30 flex items-center justify-center">
                     <Video size={28} className="text-blue-400/60" />

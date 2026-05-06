@@ -166,13 +166,24 @@ export default function HeroManager() {
 
           {/* Image Upload (for image mode) */}
           {hero.media_type === "image" && (
-            <ImageUploader
-              bucket="hero-images"
-              currentUrl={hero.image_url}
-              onUpload={(url) => setHero({ ...hero, image_url: url })}
-              onRemove={() => setHero({ ...hero, image_url: null })}
-              label="Background Image"
-            />
+            <div className="space-y-4">
+              <ImageUploader
+                bucket="hero-images"
+                currentUrl={hero.image_url}
+                onUpload={(url) => setHero({ ...hero, image_url: url })}
+                onRemove={() => setHero({ ...hero, image_url: null })}
+                label="Background Image Upload"
+              />
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Or paste image URL directly</label>
+                <Input
+                  value={hero.image_url || ""}
+                  onChange={(e) => setHero({ ...hero, image_url: e.target.value })}
+                  placeholder="https://example.com/image.jpg"
+                  className="bg-secondary/50 border-border/40 text-sm"
+                />
+              </div>
+            </div>
           )}
 
           {/* Video Upload (for video mode) */}

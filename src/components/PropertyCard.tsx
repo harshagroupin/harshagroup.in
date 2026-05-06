@@ -23,7 +23,7 @@ export default function PropertyCard({ image, video, title, location, price, are
   };
 
   return (
-    <div className="glass rounded-2xl overflow-hidden hover-tilt group">
+    <div className="glass rounded-md overflow-hidden hover-tilt group">
       <div className="relative overflow-hidden h-56">
         {hasVideo ? (
           <>
@@ -47,7 +47,7 @@ export default function PropertyCard({ image, video, title, location, price, are
                 onMouseLeave={(e) => { (e.target as HTMLVideoElement).pause(); (e.target as HTMLVideoElement).currentTime = 0; }}
               />
             )}
-            <div className="absolute top-4 right-4 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-blue-600/80 text-white backdrop-blur-sm flex items-center gap-1">
+            <div className="absolute top-4 right-4 px-2.5 py-1 rounded-sm text-[10px] font-semibold bg-black/60 text-white backdrop-blur-md flex items-center gap-1 border border-white/10">
               <Play size={10} className="fill-current" /> Video
             </div>
           </>
@@ -59,7 +59,7 @@ export default function PropertyCard({ image, video, title, location, price, are
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
         )}
-        <div className="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-semibold gold-gradient text-primary-foreground">
+        <div className="absolute top-4 left-4 px-3 py-1 rounded-sm text-xs font-semibold bg-background/90 text-primary backdrop-blur-md border border-primary/20 uppercase tracking-wider">
           {type}
         </div>
       </div>
@@ -80,7 +80,7 @@ export default function PropertyCard({ image, video, title, location, price, are
             {features.map((f) => (
               <span
                 key={f}
-                className="text-center px-1 py-1 rounded text-[10px] font-medium bg-primary/10 text-primary/80 border border-primary/15 truncate"
+                className="text-center px-2 py-1 rounded-sm text-[10px] font-medium bg-muted/50 text-muted-foreground border border-border/50 truncate"
                 title={f}
               >
                 {f}

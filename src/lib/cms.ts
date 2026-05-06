@@ -171,4 +171,32 @@ export async function deleteStorageFile(bucket: string, path: string) {
   return supabase.storage.from(bucket).remove([path]);
 }
 
+// ──────────────────────────── Inquiries ────────────────────────────
+export async function submitInquiry(inquiry: { name: string; phone: string; email: string; address?: string; message?: string }) {
+  return supabase.from('inquiries').insert([inquiry]);
+}
+
+// ──────────────────────────── Dummy Image Resolver ────────────────────────────
+import officeImg1 from "@/assets/office-space-1.jpg";
+import officeImg2 from "@/assets/office-space-2.jpg";
+import shopImg1 from "@/assets/shop-space-1.jpg";
+import shopImg2 from "@/assets/shop-space-2.jpg";
+import buildingImg from "@/assets/building-exterior.jpg";
+import galleryImg1 from "@/assets/gallery-1.jpg";
+import galleryImg2 from "@/assets/gallery-2.jpg";
+import heroImg from "@/assets/hero-mall.jpg";
+
+export function resolveImageUrl(url: string | null | undefined) {
+  if (!url) return null;
+  if (url === 'DUMMY_OFFICE_1') return officeImg1;
+  if (url === 'DUMMY_OFFICE_2') return officeImg2;
+  if (url === 'DUMMY_SHOP_1') return shopImg1;
+  if (url === 'DUMMY_SHOP_2') return shopImg2;
+  if (url === 'DUMMY_BUILDING') return buildingImg;
+  if (url === 'DUMMY_GALLERY_1') return galleryImg1;
+  if (url === 'DUMMY_GALLERY_2') return galleryImg2;
+  if (url === 'DUMMY_HERO') return heroImg;
+  return url;
+}
+
 export { isSupabaseConfigured };

@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import ScrollReveal from "@/components/ScrollReveal";
 import PropertyCard from "@/components/PropertyCard";
 import ContactForm from "@/components/ContactForm";
-import { fetchProperties, type Property } from "@/lib/cms";
-import { Loader2 } from "lucide-react";
+import { fetchProperties, resolveImageUrl, type Property } from "@/lib/cms";
+import { Loader2, Building2 } from "lucide-react";
 import heroImg from "@/assets/hero-mall.jpg";
 
 // Static fallback properties (used when CMS has no data)
@@ -31,20 +31,21 @@ export default function OurSpaces() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchProperties().then(({ data }) => {
-      // Filter: only show properties assigned to "our_spaces"
-      const filtered = (data || []).filter(
-        (p) => p.display_location === "our_spaces"
-      );
-      setCmsProperties(filtered.length > 0 ? filtered : null);
+    fetchProperties().then(({ data, error }) => {
+      if (error) {
+        setCmsProperties(null);
+      } else {
+        const filtered = (data || []).filter(
+          (p) => p.display_location === "our_spaces"
+        );
+        setCmsProperties(filtered);
+      }
       setLoading(false);
     });
   }, []);
 
-  const hasCmsData = cmsProperties && cmsProperties.length > 0;
-
   return (
-    <main className="pt-20">
+    <main className="">
       <section className="relative h-[40vh] min-h-[320px] flex items-center justify-center overflow-hidden">
         <img src={heroImg} alt="Premium commercial spaces" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
@@ -62,24 +63,31 @@ export default function OurSpaces() {
             <div className="flex justify-center py-20">
               <Loader2 className="animate-spin text-primary" size={32} />
             </div>
-          ) : hasCmsData ? (
-            /* CMS Properties */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {cmsProperties.map((p, i) => (
-                <ScrollReveal key={p.id} delay={i * 0.06}>
-                  <PropertyCard
-                    image={p.image_url || ""}
-                    video={p.video_url}
-                    title={p.title}
-                    location={p.location}
-                    price={p.price}
-                    area={p.area}
-                    type={p.type}
-                    features={p.features}
-                  />
-                </ScrollReveal>
-              ))}
-            </div>
+          ) : cmsProperties !== null ? (
+            cmsProperties.length > 0 ? (
+              /* CMS Properties */
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {cmsProperties.map((p, i) => (
+                  <ScrollReveal key={p.id} delay={i * 0.06}>
+                    <PropertyCard
+                      image={resolveImageUrl(p.image_url) || ""}
+                      video={p.video_url}
+                      title={p.title}
+                      location={p.location}
+                      price={p.price}
+                      area={p.area}
+                      type={p.type}
+                      features={p.features}
+                    />
+                  </ScrollReveal>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 text-muted-foreground bg-secondary/20 rounded-xl border border-border/40">
+                <Building2 size={48} className="mx-auto mb-4 opacity-30" />
+                <p className="text-lg">No spaces currently listed.</p>
+              </div>
+            )
           ) : (
             /* Fallback static properties */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import ScrollReveal from "./ScrollReveal";
+import { submitInquiry } from "@/lib/cms";
 
 export default function ContactForm() {
   const { toast } = useToast();
@@ -18,24 +19,21 @@ export default function ContactForm() {
     }
     setLoading(true);
     try {
-      await fetch(
-        "https://script.google.com/macros/s/AKfycbyFRfVVQD5vQpE47AO7NZh_zgehU3ZaA_013_TKdh89hmLrFoay5t4otFRMcAtpCSPtvA/exec",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            name: form.name,
-            phone: form.phone,
-            email: form.email,
-            course: form.address,
-            message: form.message,
-          }),
-          mode: "no-cors",
-        }
-      );
+      const { error } = await submitInquiry({
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim(),
+        address: form.address.trim(),
+        message: form.message.trim(),
+      });
+
+      if (error) throw error;
+
       toast({ title: "Application Submitted!", description: "We'll get back to you shortly." });
       setForm({ name: "", phone: "", email: "", address: "", message: "" });
-    } catch {
-      toast({ title: "Something went wrong", variant: "destructive" });
+    } catch (err: any) {
+      console.error("Error submitting contact form:", err);
+      toast({ title: "Something went wrong", description: err.message || "Please try again later.", variant: "destructive" });
     }
     setLoading(false);
   };

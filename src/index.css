@@ -6,48 +6,48 @@
 
 @layer base {
   :root {
-    --background: 0 0% 4%;
+    --background: 240 10% 5%;
     --foreground: 0 0% 95%;
 
-    --card: 0 0% 8%;
+    --card: 240 10% 8%;
     --card-foreground: 0 0% 95%;
 
-    --popover: 0 0% 8%;
+    --popover: 240 10% 8%;
     --popover-foreground: 0 0% 95%;
 
-    --primary: 43 74% 52%;
+    --primary: 43 70% 50%;
     --primary-foreground: 0 0% 4%;
 
-    --secondary: 0 0% 12%;
+    --secondary: 240 10% 12%;
     --secondary-foreground: 0 0% 95%;
 
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 60%;
+    --muted: 240 10% 15%;
+    --muted-foreground: 0 0% 65%;
 
-    --accent: 43 74% 52%;
+    --accent: 43 70% 50%;
     --accent-foreground: 0 0% 4%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 0 0% 18%;
-    --input: 0 0% 18%;
-    --ring: 43 74% 52%;
+    --border: 240 10% 15%;
+    --input: 240 10% 15%;
+    --ring: 43 70% 50%;
 
-    --radius: 0.75rem;
+    --radius: 0.25rem;
 
-    --sidebar-background: 0 0% 6%;
+    --sidebar-background: 240 10% 6%;
     --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 43 74% 52%;
+    --sidebar-primary: 43 70% 50%;
     --sidebar-primary-foreground: 0 0% 4%;
-    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent: 240 10% 12%;
     --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 0 0% 18%;
-    --sidebar-ring: 43 74% 52%;
+    --sidebar-border: 240 10% 15%;
+    --sidebar-ring: 43 70% 50%;
 
-    --gold: 43 74% 52%;
-    --gold-light: 43 74% 65%;
-    --gold-dark: 43 74% 40%;
+    --gold: 43 70% 50%;
+    --gold-light: 43 70% 65%;
+    --gold-dark: 43 70% 40%;
   }
 }
 
@@ -68,27 +68,27 @@
 
 @layer components {
   .glass {
-    @apply bg-card/40 backdrop-blur-xl border border-border/30;
+    @apply bg-card/70 backdrop-blur-md border border-border/50;
   }
 
   .glass-strong {
-    @apply bg-card/60 backdrop-blur-2xl border border-border/40;
+    @apply bg-background/90 backdrop-blur-lg border-b border-border/50;
   }
 
   .gold-glow {
-    box-shadow: 0 0 20px hsl(43 74% 52% / 0.3), 0 0 60px hsl(43 74% 52% / 0.1);
+    box-shadow: 0 8px 30px hsl(43 70% 50% / 0.2);
   }
 
   .gold-glow-sm {
-    box-shadow: 0 0 10px hsl(43 74% 52% / 0.2), 0 0 30px hsl(43 74% 52% / 0.05);
+    box-shadow: 0 4px 15px hsl(43 70% 50% / 0.15);
   }
 
   .gold-gradient {
-    background: linear-gradient(135deg, hsl(43 74% 40%), hsl(43 74% 52%), hsl(43 74% 65%));
+    background: linear-gradient(135deg, hsl(43 70% 40%), hsl(43 70% 50%), hsl(43 70% 65%));
   }
 
   .gold-text {
-    background: linear-gradient(135deg, hsl(43 74% 52%), hsl(43 74% 70%));
+    background: linear-gradient(135deg, hsl(43 70% 50%), hsl(43 70% 65%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -99,10 +99,11 @@
   }
 
   .hover-tilt {
-    transition: transform 0.3s ease;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .hover-tilt:hover {
-    transform: perspective(1000px) rotateY(-3deg) rotateX(3deg) scale(1.02);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
   }
 }
 

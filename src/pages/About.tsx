@@ -5,7 +5,7 @@ import { Building2, Eye, Target, Award } from "lucide-react";
 
 export default function About() {
   return (
-    <main className="pt-20">
+    <main className="">
       {/* Hero */}
       <section className="relative h-[50vh] min-h-[400px] flex items-center justify-center overflow-hidden">
         <img src={buildingImg} alt="Harsha Group building" className="absolute inset-0 w-full h-full object-cover" />

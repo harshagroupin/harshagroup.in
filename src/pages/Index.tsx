@@ -7,7 +7,7 @@ import PropertyCard from "@/components/PropertyCard";
 import ContactForm from "@/components/ContactForm";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useCounter } from "@/hooks/useCounter";
-import { fetchHeroContent, fetchProperties, type HeroContent, type Property } from "@/lib/cms";
+import { fetchHeroContent, fetchProperties, resolveImageUrl, type HeroContent, type Property } from "@/lib/cms";
 import heroImg from "@/assets/hero-mall.jpg";
 import officeImg1 from "@/assets/office-space-1.jpg";
 import shopImg1 from "@/assets/shop-space-1.jpg";
@@ -51,9 +51,13 @@ export default function Index() {
 
   useEffect(() => {
     fetchHeroContent().then(({ data }) => { if (data) setHero(data); });
-    fetchProperties().then(({ data }) => {
-      const filtered = (data || []).filter((p) => p.display_location === "homepage");
-      setCmsProperties(filtered.length > 0 ? filtered : null);
+    fetchProperties().then(({ data, error }) => {
+      if (error) {
+        setCmsProperties(null);
+      } else {
+        const filtered = (data || []).filter((p) => p.display_location === "homepage");
+        setCmsProperties(filtered);
+      }
     });
   }, []);
 
@@ -65,7 +69,7 @@ export default function Index() {
   const showVideo = hero?.media_type === "video" && hero?.video_url;
 
   return (
-    <main>
+    <main className="">
       {/* Hero */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
@@ -90,13 +94,10 @@ export default function Index() {
           <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
         </div>
 
-        {/* Floating shapes */}
-        <div className="absolute top-20 left-10 w-20 h-20 border border-primary/30 rounded-full animate-float opacity-30" />
-        <div className="absolute bottom-40 right-20 w-32 h-32 border border-primary/20 rotate-45 animate-float-delayed opacity-20" />
-        <div className="absolute top-1/3 right-1/4 w-4 h-4 bg-primary/40 rounded-full animate-float opacity-50" />
+        {/* Optional subtle grid overlay can be added here if needed, but clean is better for premium */}
 
         <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
-          <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6 animate-fade-up">
+          <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight mb-6 animate-fade-up">
             {heroHeading.includes("Drive Business Growth") ? (
               <>Premium Commercial Spaces That{" "}<span className="gold-text">Drive Business Growth</span></>
             ) : (
@@ -126,28 +127,35 @@ export default function Index() {
         <div className="max-w-7xl mx-auto">
           <ScrollReveal>
             <div className="text-center mb-14">
-              <h2 className="font-serif text-3xl md:text-5xl font-bold mb-4">
+              <h2 className="font-serif text-3xl md:text-5xl font-bold tracking-tight mb-4">
                 Featured <span className="gold-text">Properties</span>
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">Handpicked premium commercial spaces for discerning investors and businesses.</p>
             </div>
           </ScrollReveal>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {cmsProperties ? (
-              cmsProperties.map((p, i) => (
-                <ScrollReveal key={p.id} delay={i * 0.1}>
-                  <PropertyCard
-                    image={p.image_url || ""}
-                    video={p.video_url}
-                    title={p.title}
-                    location={p.location}
-                    price={p.price}
-                    area={p.area}
-                    type={p.type}
-                    features={p.features}
-                  />
-                </ScrollReveal>
-              ))
+            {cmsProperties !== null ? (
+              cmsProperties.length > 0 ? (
+                cmsProperties.map((p, i) => (
+                  <ScrollReveal key={p.id} delay={i * 0.1}>
+                    <PropertyCard
+                      image={resolveImageUrl(p.image_url) || ""}
+                      video={p.video_url}
+                      title={p.title}
+                      location={p.location}
+                      price={p.price}
+                      area={p.area}
+                      type={p.type}
+                      features={p.features}
+                    />
+                  </ScrollReveal>
+                ))
+              ) : (
+                <div className="col-span-1 md:col-span-2 lg:col-span-4 text-center py-16 text-muted-foreground bg-secondary/20 rounded-xl border border-border/40">
+                  <Building2 size={48} className="mx-auto mb-4 opacity-30" />
+                  <p className="text-lg">No featured properties currently listed.</p>
+                </div>
+              )
             ) : (
               [
                 { image: officeImg1, title: "Premium Office Suite A", location: "Harsha City Mall, Indirapuram", price: "₹45,000/mo", area: "1,200 sq ft", type: "Office" },
@@ -169,7 +177,7 @@ export default function Index() {
         <div className="max-w-7xl mx-auto">
           <ScrollReveal>
             <div className="text-center mb-14">
-              <h2 className="font-serif text-3xl md:text-5xl font-bold mb-4">
+              <h2 className="font-serif text-3xl md:text-5xl font-bold tracking-tight mb-4">
                 Why Choose <span className="gold-text">Harsha Group</span>
               </h2>
             </div>
@@ -182,7 +190,7 @@ export default function Index() {
               { icon: TrendingUp, title: "High ROI", desc: "Proven track record of delivering exceptional returns on investments." },
             ].map((item, i) => (
               <ScrollReveal key={i} delay={i * 0.1}>
-                <div className="glass rounded-2xl p-6 text-center hover-tilt group">
+                <div className="glass rounded-md p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group">
                   <div className="w-16 h-16 mx-auto mb-4 rounded-xl gold-gradient flex items-center justify-center group-hover:gold-glow transition-all">
                     <item.icon size={28} className="text-primary-foreground" />
                   </div>
@@ -208,7 +216,7 @@ export default function Index() {
       <section className="py-16 bg-card/30 overflow-hidden">
         <ScrollReveal>
           <div className="text-center mb-10">
-            <h2 className="font-serif text-3xl md:text-4xl font-bold">
+            <h2 className="font-serif text-3xl md:text-4xl font-bold tracking-tight">
               Our <span className="gold-text">Channel Partners</span>
             </h2>
           </div>
@@ -229,7 +237,7 @@ export default function Index() {
         <div className="max-w-7xl mx-auto">
           <ScrollReveal>
             <div className="text-center mb-14">
-              <h2 className="font-serif text-3xl md:text-5xl font-bold mb-4">
+              <h2 className="font-serif text-3xl md:text-5xl font-bold tracking-tight mb-4">
                 What Our <span className="gold-text">Clients Say</span>
               </h2>
             </div>
@@ -237,7 +245,7 @@ export default function Index() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {testimonials.map((t, i) => (
               <ScrollReveal key={i} delay={i * 0.1}>
-                <div className="glass rounded-2xl p-6 md:p-8">
+                <div className="glass rounded-md p-6 md:p-8 relative">
                   <div className="flex gap-1 mb-4">
                     {Array.from({ length: 5 }).map((_, j) => (
                       <Star key={j} size={18} className={j < t.rating ? "fill-primary text-primary" : "text-muted-foreground/30"} />
