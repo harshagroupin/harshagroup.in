@@ -8,12 +8,12 @@ import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
-import Index from "./pages/Index";
-import About from "./pages/About";
-import OurSpaces from "./pages/OurSpaces";
-import Gallery from "./pages/Gallery";
-import Contact from "./pages/Contact";
-import NotFound from "./pages/NotFound";
+const Index = lazy(() => import("./pages/Index"));
+const About = lazy(() => import("./pages/About"));
+const OurSpaces = lazy(() => import("./pages/OurSpaces"));
+const Gallery = lazy(() => import("./pages/Gallery"));
+const Contact = lazy(() => import("./pages/Contact"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Lazy load Admin so Supabase is only imported when needed
 const Admin = lazy(() => import("./pages/Admin"));
@@ -41,17 +41,23 @@ function AppLayout() {
   return (
     <>
       <Navbar />
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/our-spaces" element={<OurSpaces />} />
-        {/* Backward-compatible redirects so old links / bookmarks don't 404 */}
-        <Route path="/office-space" element={<Navigate to="/our-spaces" replace />} />
-        <Route path="/shops" element={<Navigate to="/our-spaces" replace />} />
-        <Route path="/gallery" element={<Gallery />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      }>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/our-spaces" element={<OurSpaces />} />
+          {/* Backward-compatible redirects so old links / bookmarks don't 404 */}
+          <Route path="/office-space" element={<Navigate to="/our-spaces" replace />} />
+          <Route path="/shops" element={<Navigate to="/our-spaces" replace />} />
+          <Route path="/gallery" element={<Gallery />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
       <Footer />
       <WhatsAppButton />
     </>
