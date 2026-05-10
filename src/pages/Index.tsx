@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Building2, Shield, MapPin, TrendingUp, Star } from "lucide-react";
+import { Building2, Shield, MapPin, TrendingUp, Star, Loader2 } from "lucide-react";
 import ScrollReveal from "@/components/ScrollReveal";
 import PropertyCard from "@/components/PropertyCard";
 import ContactForm from "@/components/ContactForm";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useCounter } from "@/hooks/useCounter";
 import { fetchHeroContent, fetchProperties, resolveImageUrl, type HeroContent, type Property } from "@/lib/cms";
+import { formatImageUrl } from "@/lib/utils";
 import heroImg from "@/assets/hero-mall.jpg";
 import officeImg1 from "@/assets/office-space-1.jpg";
 import shopImg1 from "@/assets/shop-space-1.jpg";
@@ -45,19 +46,34 @@ function StatCounter({ value, suffix, format, label, start }: { value: number; s
 }
 
 export default function Index() {
-  const statsReveal = useScrollReveal();
+  const statsReveal = useScrollReveal<HTMLElement>();
   const [hero, setHero] = useState<HeroContent | null>(null);
   const [cmsProperties, setCmsProperties] = useState<Property[] | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchHeroContent().then(({ data }) => { if (data) setHero(data); });
-    fetchProperties().then(({ data, error }) => {
-      if (error) {
+    Promise.all([fetchHeroContent(), fetchProperties()]).then(([heroRes, propsRes]) => {
+      if (heroRes.data) setHero(heroRes.data);
+      
+      if (propsRes.error) {
         setCmsProperties(null);
       } else {
-        const filtered = (data || []).filter((p) => p.display_location === "homepage");
+        const filtered = (propsRes.data || []).filter((p) => p.display_location === "homepage");
         setCmsProperties(filtered);
       }
+      // Preload hero image to prevent blank space flash
+      const heroData = heroRes.data;
+      if (heroData?.media_type !== "video") {
+        const imageUrl = heroData?.image_url ? formatImageUrl(heroData.image_url) : heroImg;
+        if (imageUrl) {
+          const img = new Image();
+          img.src = imageUrl;
+          img.onload = () => setLoading(false);
+          img.onerror = () => setLoading(false); // fallback if fails
+          return;
+        }
+      }
+      setLoading(false);
     });
   }, []);
 
@@ -67,6 +83,14 @@ export default function Index() {
   const ctaPrimary = hero?.cta_primary_text || "Explore Properties";
   const ctaSecondary = hero?.cta_secondary_text || "Contact Now";
   const showVideo = hero?.media_type === "video" && hero?.video_url;
+
+  if (loading) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="animate-spin text-primary" size={48} />
+      </main>
+    );
+  }
 
   return (
     <main className="">
@@ -84,7 +108,7 @@ export default function Index() {
             />
           ) : (
             <img
-              src={hero?.image_url || heroImg}
+              src={hero?.image_url ? formatImageUrl(hero.image_url) : heroImg}
               alt="Premium commercial spaces by Harsha Group"
               className="w-full h-full object-cover"
               width={1920}
@@ -147,6 +171,7 @@ export default function Index() {
                       area={p.area}
                       type={p.type}
                       features={p.features}
+                      minimal={true}
                     />
                   </ScrollReveal>
                 ))
@@ -164,7 +189,7 @@ export default function Index() {
                 { image: officeImg2, title: "Co-Working Space", location: "Harsha Business Center", price: "₹25,000/mo", area: "500 sq ft", type: "Office" },
               ].map((p, i) => (
                 <ScrollReveal key={i} delay={i * 0.1}>
-                  <PropertyCard {...p} />
+                  <PropertyCard {...p} minimal={true} />
                 </ScrollReveal>
               ))
             )}

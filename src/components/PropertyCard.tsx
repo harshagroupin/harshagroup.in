@@ -11,9 +11,10 @@ interface Props {
   area: string;
   type: string;
   features?: string[] | null;
+  minimal?: boolean;
 }
 
-export default function PropertyCard({ image, video, title, location, price, area, type, features }: Props) {
+export default function PropertyCard({ image, video, title, location, price, area, type, features, minimal = false }: Props) {
   const hasVideo = video && video.trim().length > 0;
 
   // Extract YouTube embed URL
@@ -23,8 +24,8 @@ export default function PropertyCard({ image, video, title, location, price, are
   };
 
   return (
-    <div className="glass rounded-md overflow-hidden hover-tilt group">
-      <div className="relative overflow-hidden h-56">
+    <div className="glass rounded-md overflow-hidden hover-tilt group h-full flex flex-col">
+      <div className="relative overflow-hidden h-72 flex-shrink-0 bg-secondary/30">
         {hasVideo ? (
           <>
             {/* Video thumbnail or embed */}
@@ -63,13 +64,16 @@ export default function PropertyCard({ image, video, title, location, price, are
           {type}
         </div>
       </div>
-      <div className="p-5">
+      <div className="p-5 flex-1 flex flex-col">
         <h3 className="font-serif text-lg font-semibold mb-2">{title}</h3>
-        <div className="flex items-center gap-1 text-muted-foreground text-sm mb-3">
-          <MapPin size={14} className="text-primary" />
-          {location}
+        <div className="flex items-center gap-1.5 text-muted-foreground text-sm mb-4">
+          <MapPin size={14} className="text-primary flex-shrink-0" />
+          <span className="line-clamp-1">{location}</span>
         </div>
-        <div className="flex items-center justify-between mb-4">
+        
+        {!minimal && (
+          <>
+            <div className="flex items-center justify-between mb-4">
           <span className="gold-text font-bold text-lg">{price}</span>
           <span className="text-muted-foreground text-sm">{area}</span>
         </div>
@@ -87,9 +91,11 @@ export default function PropertyCard({ image, video, title, location, price, are
               </span>
             ))}
           </div>
+            )}
+          </>
         )}
 
-        <Link to="/contact">
+        <Link to="/contact" className="mt-auto">
           <Button className="w-full gold-gradient text-primary-foreground hover:opacity-90">
             Enquire Now
           </Button>

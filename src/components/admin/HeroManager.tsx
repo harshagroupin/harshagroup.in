@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { fetchHeroContent, updateHeroContent, uploadImage, type HeroContent } from "@/lib/cms";
+import { formatImageUrl } from "@/lib/utils";
 import ImageUploader from "./ImageUploader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -109,7 +110,7 @@ export default function HeroManager() {
                 playsInline
               />
             ) : hero.image_url ? (
-              <img src={hero.image_url} alt="Hero" className="w-full h-full object-cover" />
+              <img src={formatImageUrl(hero.image_url)} alt="Hero" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-secondary/30 flex items-center justify-center">
                 <Sparkles size={40} className="text-muted-foreground/30" />

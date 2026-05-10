@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import ScrollReveal from "@/components/ScrollReveal";
 import { X, Play, Loader2, ImageIcon } from "lucide-react";
 import { fetchGalleryImages, type GalleryImage } from "@/lib/cms";
+import { formatImageUrl } from "@/lib/utils";
 
 // Static fallback
 import heroImg from "@/assets/hero-mall.jpg";
@@ -93,7 +94,7 @@ export default function Gallery() {
                         </>
                       ) : (
                         <img
-                          src={item.image_url}
+                          src={formatImageUrl(item.image_url)}
                           alt={item.alt_text}
                           loading="lazy"
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
@@ -176,7 +177,7 @@ export default function Gallery() {
               }
               return (
                 <img
-                  src={item.image_url}
+                  src={formatImageUrl(item.image_url)}
                   alt={item.alt_text}
                   className="max-w-full max-h-[85vh] object-contain rounded-xl animate-fade-up"
                   onClick={(e) => e.stopPropagation()}

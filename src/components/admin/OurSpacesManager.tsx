@@ -6,6 +6,7 @@ import {
   resolveImageUrl,
   type Property,
 } from "@/lib/cms";
+import { formatImageUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -302,7 +303,7 @@ export default function OurSpacesManager() {
               />
               {editItem.image_url && (
                 <div className="relative group rounded-xl overflow-hidden border border-border/30 bg-secondary/30">
-                  <img src={editItem.image_url} alt="Preview" className="w-full h-48 object-cover" />
+                  <img src={formatImageUrl(editItem.image_url)} alt="Preview" className="w-full h-48 object-cover" />
                   <button
                     onClick={() => setEditItem({ ...editItem, image_url: null })}
                     className="absolute top-2 right-2 p-1.5 rounded-lg bg-destructive/80 hover:bg-destructive text-destructive-foreground transition-colors opacity-0 group-hover:opacity-100"

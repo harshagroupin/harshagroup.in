@@ -6,6 +6,7 @@ import {
   deleteGalleryImage,
   type GalleryImage,
 } from "@/lib/cms";
+import { formatImageUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -183,7 +184,7 @@ export default function GalleryManager() {
                   </div>
                 </>
               ) : item.image_url ? (
-                <img src={item.image_url} alt={item.alt_text} className="w-full h-full object-cover" />
+                <img src={formatImageUrl(item.image_url)} alt={item.alt_text} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-secondary/30 flex items-center justify-center">
                   <ImageIcon size={20} className="text-muted-foreground/30" />
@@ -264,7 +265,7 @@ export default function GalleryManager() {
                 />
                 {newItem.image_url && (
                   <div className="rounded-xl overflow-hidden border border-border/30">
-                    <img src={newItem.image_url} alt="Preview" className="w-full h-40 object-cover" />
+                    <img src={formatImageUrl(newItem.image_url)} alt="Preview" className="w-full h-40 object-cover" />
                   </div>
                 )}
               </div>
@@ -335,7 +336,7 @@ export default function GalleryManager() {
                 </div>
               )
             ) : editItem.image_url ? (
-              <img src={editItem.image_url} alt="" className="w-full h-40 object-cover rounded-xl" />
+              <img src={formatImageUrl(editItem.image_url)} alt="" className="w-full h-40 object-cover rounded-xl" />
             ) : null}
 
             {/* URL field */}

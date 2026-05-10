@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { uploadImage } from "@/lib/cms";
 import { Upload, X, ImageIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatImageUrl } from "@/lib/utils";
 
 interface Props {
   bucket: string;
@@ -48,7 +49,7 @@ export default function ImageUploader({ bucket, currentUrl, onUpload, onRemove, 
       
       {preview ? (
         <div className="relative group rounded-xl overflow-hidden border border-border/30 bg-secondary/30">
-          <img src={preview} alt="Preview" className="w-full h-48 object-cover" />
+          <img src={formatImageUrl(preview)} alt="Preview" className="w-full h-48 object-cover" />
           {uploading && (
             <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
               <Loader2 className="animate-spin text-primary" size={32} />

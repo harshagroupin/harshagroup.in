@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { formatImageUrl } from '@/lib/utils';
 
 // ──────────────────────────── Types ────────────────────────────
 export interface Property {
@@ -196,7 +197,7 @@ export function resolveImageUrl(url: string | null | undefined) {
   if (url === 'DUMMY_GALLERY_1') return galleryImg1;
   if (url === 'DUMMY_GALLERY_2') return galleryImg2;
   if (url === 'DUMMY_HERO') return heroImg;
-  return url;
+  return formatImageUrl(url);
 }
 
 export { isSupabaseConfigured };
