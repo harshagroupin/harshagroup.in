@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import ImageUploader from "./ImageUploader";
 import VideoUploader from "./VideoUploader";
 import { Switch } from "@/components/ui/switch";
+import SliderManager from "./SliderManager";
 import {
   Dialog,
   DialogContent,
@@ -173,6 +174,13 @@ export default function OurSpacesManager() {
 
   return (
     <div className="space-y-6">
+      {/* Slider Images Section */}
+      <SliderManager
+        pageKey="our_spaces_slides"
+        title="Our Spaces"
+        description="Manage the hero slider images shown at the top of the Our Spaces page."
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

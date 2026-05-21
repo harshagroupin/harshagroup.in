@@ -13,9 +13,10 @@ interface Props {
   features?: string[] | null;
   minimal?: boolean;
   showEnquire?: boolean;
+  onEnquire?: (title: string, location: string) => void;
 }
 
-export default function PropertyCard({ image, video, title, location, price, area, type, features, minimal = false, showEnquire = true }: Props) {
+export default function PropertyCard({ image, video, title, location, price, area, type, features, minimal = false, showEnquire = true, onEnquire }: Props) {
   const hasVideo = video && video.trim().length > 0;
 
   // Extract YouTube embed URL
@@ -93,44 +94,61 @@ export default function PropertyCard({ image, video, title, location, price, are
         )}
       </div>
       <div className="p-3 flex-1 flex flex-col">
-        <h3 className="font-serif text-lg font-semibold mb-1">{title}</h3>
-        <div className="flex items-center gap-1.5 text-muted-foreground text-sm mb-2">
-          <MapPin size={14} className="text-primary flex-shrink-0" />
-          <span className="line-clamp-1">{location}</span>
-        </div>
-        
-        {!minimal && (
-          <>
-            {(price || area) && (
-              <div className="flex items-center justify-between mb-2">
-                <span className="gold-text font-bold text-lg">{formatPrice(price)}</span>
-                <span className="text-muted-foreground text-sm">{formatArea(area)}</span>
-              </div>
-            )}
+        <Link
+          to="/our-spaces"
+          className="flex-1 flex flex-col cursor-pointer group/info"
+        >
+          <h3 className="font-serif text-lg font-semibold mb-1 group-hover/info:text-primary transition-colors">{title}</h3>
+          <div className="flex items-center gap-1.5 text-muted-foreground text-sm mb-2">
+            <MapPin size={14} className="text-primary flex-shrink-0" />
+            <span className="line-clamp-1">{location}</span>
+          </div>
 
-            {/* Features - 4 per row, wrap to next line */}
-            {filteredFeatures.length > 0 && (
-              <div className="grid grid-cols-4 gap-1 mb-2">
-                {filteredFeatures.map((f) => (
-                  <span
-                    key={f}
-                    className="text-center px-1.5 py-0.5 rounded-sm text-[10px] font-medium bg-muted/50 text-muted-foreground border border-border/50 truncate"
-                    title={f}
-                  >
-                    {f}
-                  </span>
-                ))}
-              </div>
-            )}
-          </>
-        )}
+          {!minimal && (
+            <>
+              {(price || area) && (
+                <div className="flex items-center justify-between mb-2">
+                  <span className="gold-text font-bold text-lg">{formatPrice(price)}</span>
+                  <span className="text-muted-foreground text-sm">{formatArea(area)}</span>
+                </div>
+              )}
+
+              {/* Features - 4 per row, wrap to next line */}
+              {filteredFeatures.length > 0 && (
+                <div className="grid grid-cols-4 gap-1 mb-2">
+                  {filteredFeatures.map((f) => (
+                    <span
+                      key={f}
+                      className="text-center px-1.5 py-0.5 rounded-sm text-[10px] font-medium bg-muted/50 text-muted-foreground border border-border/50 truncate"
+                      title={f}
+                    >
+                      {f}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </Link>
 
         {showEnquire && (
-          <Link to="/contact" className="mt-auto">
-            <Button className="w-full gold-gradient text-primary-foreground hover:opacity-90">
+          onEnquire ? (
+            <button
+              onClick={() => onEnquire(title, location)}
+              className="mt-auto w-full py-2 rounded-md gold-gradient text-primary-foreground font-medium hover:opacity-90 transition-opacity text-sm"
+            >
               Enquire Now
-            </Button>
-          </Link>
+            </button>
+          ) : (
+            <Link
+              to={`/contact?property=${encodeURIComponent(title)}&location=${encodeURIComponent(location)}`}
+              className="mt-auto"
+            >
+              <Button className="w-full gold-gradient text-primary-foreground hover:opacity-90">
+                Enquire Now
+              </Button>
+            </Link>
+          )
         )}
       </div>
     </div>

@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import ScrollReveal from "@/components/ScrollReveal";
-import { X, Play, Loader2, ImageIcon } from "lucide-react";
-import { fetchGalleryImages, fetchProperties, type GalleryImage, type Property, resolveImageUrl } from "@/lib/cms";
+import { X, Play, Loader2, ImageIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { fetchGalleryImages, fetchProperties, fetchPageContent, type GalleryImage, type Property, resolveImageUrl } from "@/lib/cms";
+import useEmblaCarousel from "embla-carousel-react";
 
 // Static fallback
 import heroImg from "@/assets/hero-mall.jpg";
@@ -24,6 +25,11 @@ const fallbackImages = [
   { src: galleryImg2, alt: "Mall escalators" },
 ];
 
+// Hero slider images (best shots from fallback)
+const heroSlides = [
+  { src: heroImg, caption: "Luxury Mall Interior" },
+];
+
 // YouTube helpers
 const getYoutubeId = (url: string): string | null => {
   const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
@@ -39,8 +45,32 @@ export default function Gallery() {
   const [lightbox, setLightbox] = useState<number | null>(null);
   const [cmsItems, setCmsItems] = useState<GalleryImage[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [cmsSlides, setCmsSlides] = useState<string[] | null>(null);
+
+  // Embla for hero slider
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 40 });
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+
+  // Auto-play
+  useEffect(() => {
+    if (!emblaApi) return;
+    const onSelect = () => setActiveSlide(emblaApi.selectedScrollSnap());
+    emblaApi.on("select", onSelect);
+    const interval = setInterval(() => emblaApi.scrollNext(), 4000);
+    return () => {
+      clearInterval(interval);
+      emblaApi.off("select", onSelect);
+    };
+  }, [emblaApi]);
 
   useEffect(() => {
+    fetchPageContent("gallery_slides").then(({ data }) => {
+      if (data?.content && Array.isArray(data.content) && data.content.length > 0) {
+        setCmsSlides(data.content as string[]);
+      }
+    });
     Promise.all([fetchGalleryImages(), fetchProperties()]).then(([galleryRes, propsRes]) => {
       let items: GalleryImage[] = [];
       if (galleryRes.data) {
@@ -67,18 +97,77 @@ export default function Gallery() {
   }, []);
 
   return (
-    <main className="pt-20">
+    <main className="">
+      {/* Hero Slider */}
+      <section className="relative h-[50vh] min-h-[360px] flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0" ref={emblaRef}>
+          <div className="flex h-full">
+            {(cmsSlides
+              ? cmsSlides.map((url, i) => ({ src: url, caption: `Slide ${i + 1}` }))
+              : heroSlides
+            ).map((slide, i) => (
+              <div key={i} className="flex-[0_0_100%] min-w-0 relative h-full">
+                <img
+                  src={slide.src}
+                  alt={slide.caption}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80 pointer-events-none" />
+
+        {/* Arrows — only when multiple slides */}
+        {(cmsSlides || heroSlides).length > 1 && (
+          <>
+            <button
+              onClick={scrollPrev}
+              className="absolute left-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm border border-white/20 transition-all"
+              aria-label="Previous slide"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              onClick={scrollNext}
+              className="absolute right-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm border border-white/20 transition-all"
+              aria-label="Next slide"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </>
+        )}
+
+        {/* Title */}
+        <div className="relative z-10 text-center px-4">
+          <h1 className="font-serif text-4xl md:text-6xl font-bold mb-4 text-white">
+            Our <span className="gold-text">Gallery</span>
+          </h1>
+          <p className="text-white/80 text-lg">A glimpse into our premium commercial spaces and developments.</p>
+        </div>
+
+        {/* Dot indicators — only when multiple slides */}
+        {(cmsSlides || heroSlides).length > 1 && (
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+            {(cmsSlides || heroSlides).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => emblaApi?.scrollTo(i)}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  i === activeSlide ? "bg-primary w-6" : "bg-white/40 hover:bg-white/70"
+                }`}
+                aria-label={`Go to slide ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Gallery Grid */}
       <section className="section-padding">
         <div className="max-w-7xl mx-auto">
-          <ScrollReveal>
-            <div className="text-center mb-14">
-              <h1 className="font-serif text-4xl md:text-6xl font-bold mb-4">
-                Our <span className="gold-text">Gallery</span>
-              </h1>
-              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">A glimpse into our premium commercial spaces and developments.</p>
-            </div>
-          </ScrollReveal>
-
           {loading ? (
             <div className="flex justify-center py-20">
               <Loader2 className="animate-spin text-primary" size={32} />
@@ -150,8 +239,11 @@ export default function Gallery() {
                       loading="lazy"
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />
+                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-4 pt-10">
+                      <p className="text-white font-serif font-semibold text-sm group-hover:text-primary transition-colors">{img.alt}</p>
+                    </div>
                     <div className="absolute inset-0 bg-background/0 group-hover:bg-background/30 transition-colors duration-300 flex items-center justify-center">
-                      <span className="opacity-0 group-hover:opacity-100 transition-opacity text-foreground font-medium">View</span>
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity text-foreground font-medium bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-white/10 text-xs">View</span>
                     </div>
                   </div>
                 </ScrollReveal>

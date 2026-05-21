@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import ScrollReveal from "@/components/ScrollReveal";
 import PropertyCard from "@/components/PropertyCard";
 import ContactForm from "@/components/ContactForm";
-import { fetchProperties, resolveImageUrl, type Property } from "@/lib/cms";
-import { Loader2, Building2 } from "lucide-react";
-import heroImg from "@/assets/hero-mall.jpg";
+import { fetchProperties, resolveImageUrl, fetchPageContent, type Property } from "@/lib/cms";
+import { Loader2, Building2, ChevronLeft, ChevronRight } from "lucide-react";
+import useEmblaCarousel from "embla-carousel-react";
 
-// Static fallback properties (used when CMS has no data)
+// Hero slide images
+import heroImg from "@/assets/hero-mall.jpg";
 import officeImg1 from "@/assets/office-space-1.jpg";
 import officeImg2 from "@/assets/office-space-2.jpg";
 import galleryImg1 from "@/assets/gallery-1.jpg";
@@ -15,6 +16,11 @@ import buildingImg from "@/assets/building-exterior.jpg";
 import shopImg1 from "@/assets/shop-space-1.jpg";
 import shopImg2 from "@/assets/shop-space-2.jpg";
 
+const heroSlides = [
+  { src: heroImg, caption: "Premium Mall Spaces" },
+];
+
+// Static fallback properties (used when CMS has no data)
 const fallbackProperties = [
   { image: officeImg1, title: "Executive Office Suite", location: "Harsha City Mall, Floor 5", price: "₹55,000/mo", area: "1,500 sq ft", type: "Premium" },
   { image: officeImg2, title: "Co-Working Hub", location: "Harsha Business Center", price: "₹15,000/mo", area: "300 sq ft", type: "Flexible" },
@@ -29,8 +35,39 @@ const fallbackProperties = [
 export default function OurSpaces() {
   const [cmsProperties, setCmsProperties] = useState<Property[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [cmsSlides, setCmsSlides] = useState<string[] | null>(null);
+  const [enquiryMessage, setEnquiryMessage] = useState("");
+
+  const handleEnquire = (title: string, location: string) => {
+    const msg = `I am interested in the property: ${title}${location ? ` (${location})` : ""}. Please contact me with more details.`;
+    setEnquiryMessage(msg);
+  };
+
+  // Embla carousel for hero
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 40 });
+
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+
+  // Auto-play hero slider
+  useEffect(() => {
+    if (!emblaApi) return;
+    const onSelect = () => setActiveSlide(emblaApi.selectedScrollSnap());
+    emblaApi.on("select", onSelect);
+    const interval = setInterval(() => emblaApi.scrollNext(), 4000);
+    return () => {
+      clearInterval(interval);
+      emblaApi.off("select", onSelect);
+    };
+  }, [emblaApi]);
 
   useEffect(() => {
+    fetchPageContent("our_spaces_slides").then(({ data }) => {
+      if (data?.content && Array.isArray(data.content) && data.content.length > 0) {
+        setCmsSlides(data.content as string[]);
+      }
+    });
     fetchProperties().then(({ data, error }) => {
       if (error) {
         setCmsProperties(null);
@@ -46,17 +83,75 @@ export default function OurSpaces() {
 
   return (
     <main className="">
-      <section className="relative h-[40vh] min-h-[320px] flex items-center justify-center overflow-hidden">
-        <img src={heroImg} alt="Premium commercial spaces" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80" />
+      {/* Hero with auto-sliding carousel */}
+      <section className="relative h-[50vh] min-h-[360px] flex items-center justify-center overflow-hidden">
+        {/* Embla viewport */}
+        <div className="absolute inset-0" ref={emblaRef}>
+          <div className="flex h-full">
+            {(cmsSlides
+              ? cmsSlides.map((url, i) => ({ src: url, caption: `Slide ${i + 1}` }))
+              : heroSlides
+            ).map((slide, i) => (
+              <div key={i} className="flex-[0_0_100%] min-w-0 relative h-full">
+                <img
+                  src={slide.src}
+                  alt={slide.caption}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80 pointer-events-none" />
+
+        {/* Arrows — only when multiple slides */}
+        {(cmsSlides || heroSlides).length > 1 && (
+          <>
+            <button
+              onClick={scrollPrev}
+              className="absolute left-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm border border-white/20 transition-all"
+              aria-label="Previous slide"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              onClick={scrollNext}
+              className="absolute right-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm border border-white/20 transition-all"
+              aria-label="Next slide"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </>
+        )}
+
+        {/* Text */}
         <div className="relative z-10 text-center px-4">
           <h1 className="font-serif text-4xl md:text-6xl font-bold mb-4 text-white">
             Our <span className="gold-text">Spaces</span>
           </h1>
           <p className="text-white/80 text-lg">Premium offices, retail outlets and mall spaces — curated for growth.</p>
         </div>
+
+        {/* Dot indicators — only when multiple slides */}
+        {(cmsSlides || heroSlides).length > 1 && (
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+            {(cmsSlides || heroSlides).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => emblaApi?.scrollTo(i)}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  i === activeSlide ? "bg-primary w-6" : "bg-white/40 hover:bg-white/70"
+                }`}
+                aria-label={`Go to slide ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
+      {/* Properties Grid */}
       <section className="section-padding">
         <div className="max-w-7xl mx-auto">
           {loading ? (
@@ -78,6 +173,7 @@ export default function OurSpaces() {
                       area={p.area}
                       type={p.type}
                       features={p.features}
+                      onEnquire={handleEnquire}
                     />
                   </ScrollReveal>
                 ))}
@@ -93,7 +189,7 @@ export default function OurSpaces() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {fallbackProperties.map((p, i) => (
                 <ScrollReveal key={i} delay={i * 0.06}>
-                  <PropertyCard {...p} />
+                  <PropertyCard {...p} onEnquire={handleEnquire} />
                 </ScrollReveal>
               ))}
             </div>
@@ -101,7 +197,7 @@ export default function OurSpaces() {
         </div>
       </section>
 
-      <ContactForm />
+      <ContactForm initialMessage={enquiryMessage} />
     </main>
   );
 }

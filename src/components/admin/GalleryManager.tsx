@@ -33,6 +33,7 @@ import {
   Film,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import SliderManager from "./SliderManager";
 
 export default function GalleryManager() {
   const { toast } = useToast();
@@ -155,6 +156,13 @@ export default function GalleryManager() {
 
   return (
     <div className="space-y-6">
+      {/* Slider Images Section */}
+      <SliderManager
+        pageKey="gallery_slides"
+        title="Gallery"
+        description="Manage the hero slider images shown at the top of the Gallery page."
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

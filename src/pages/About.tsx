@@ -1,21 +1,100 @@
+import { useState, useEffect, useCallback } from "react";
 import ScrollReveal from "@/components/ScrollReveal";
 import buildingImg from "@/assets/building-exterior.jpg";
 import officeImg from "@/assets/office-space-2.jpg";
-import { Building2, Eye, Target, Award } from "lucide-react";
+import heroImg from "@/assets/hero-mall.jpg";
+import shopImg from "@/assets/shop-space-1.jpg";
+import galleryImg from "@/assets/gallery-1.jpg";
+import { Building2, Eye, Target, Award, ChevronLeft, ChevronRight } from "lucide-react";
+import useEmblaCarousel from "embla-carousel-react";
+
+const heroSlides = [
+  { src: buildingImg, caption: "Harsha Group Building" },
+];
 
 export default function About() {
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 40 });
+
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    const onSelect = () => setActiveSlide(emblaApi.selectedScrollSnap());
+    emblaApi.on("select", onSelect);
+    const interval = setInterval(() => emblaApi.scrollNext(), 4500);
+    return () => {
+      clearInterval(interval);
+      emblaApi.off("select", onSelect);
+    };
+  }, [emblaApi]);
+
   return (
-    <main className="pt-20">
-      {/* Hero */}
+    <main className="">
+      {/* Hero Slider — starts behind navbar (no pt-20) */}
       <section className="relative h-[50vh] min-h-[400px] flex items-center justify-center overflow-hidden">
-        <img src={buildingImg} alt="Harsha Group building" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80" />
+        <div className="absolute inset-0" ref={emblaRef}>
+          <div className="flex h-full">
+            {heroSlides.map((slide, i) => (
+              <div key={i} className="flex-[0_0_100%] min-w-0 relative h-full">
+                <img
+                  src={slide.src}
+                  alt={slide.caption}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80 pointer-events-none" />
+
+        {/* Arrows */}
+        {/* Arrows — only when multiple slides */}
+        {heroSlides.length > 1 && (
+          <>
+            <button
+              onClick={scrollPrev}
+              className="absolute left-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm border border-white/20 transition-all"
+              aria-label="Previous slide"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              onClick={scrollNext}
+              className="absolute right-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm border border-white/20 transition-all"
+              aria-label="Next slide"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </>
+        )}
+
+        {/* Title */}
         <div className="relative z-10 text-center px-4">
           <h1 className="font-serif text-4xl md:text-6xl font-bold mb-4 text-white">
             About <span className="gold-text">Harsha Group</span>
           </h1>
           <p className="text-white/80 text-lg max-w-2xl mx-auto">Building trust, delivering excellence since 2009.</p>
         </div>
+
+        {/* Dot indicators — only when multiple slides */}
+        {heroSlides.length > 1 && (
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+            {heroSlides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => emblaApi?.scrollTo(i)}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  i === activeSlide ? "bg-primary w-6" : "bg-white/40 hover:bg-white/70"
+                }`}
+                aria-label={`Go to slide ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Company Overview */}
