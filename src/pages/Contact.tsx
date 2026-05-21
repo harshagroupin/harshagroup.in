@@ -45,14 +45,14 @@ export default function Contact() {
             <ScrollReveal delay={0.2}>
               <div className="glass rounded-2xl overflow-hidden h-[400px]">
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3502.0!2d77.37!3d28.63!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjjCsDM4JzAuMCJOIDc3wrAyMicwLjAiRQ!5e0!3m2!1sen!2sin!4v1234567890"
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3501.768!2d77.3701!3d28.6359!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390cf1b6c2b6a6d5%3A0x30f24c60e5d87de4!2sHarsha%20City%20Mall!5e0!3m2!1sen!2sin!4v1716000000000"
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
-                  title="Harsha Group Location"
+                  title="Harsha Group Location - Harsha City Mall, Indirapuram"
                 />
               </div>
             </ScrollReveal>

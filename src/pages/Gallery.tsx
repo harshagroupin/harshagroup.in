@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import ScrollReveal from "@/components/ScrollReveal";
 import { X, Play, Loader2, ImageIcon } from "lucide-react";
-import { fetchGalleryImages, type GalleryImage } from "@/lib/cms";
-import { formatImageUrl } from "@/lib/utils";
+import { fetchGalleryImages, fetchProperties, type GalleryImage, type Property, resolveImageUrl } from "@/lib/cms";
 
 // Static fallback
 import heroImg from "@/assets/hero-mall.jpg";
@@ -42,12 +41,27 @@ export default function Gallery() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchGalleryImages().then(({ data, error }) => {
-      if (error) {
-        setCmsItems(null);
-      } else {
-        setCmsItems(data || []);
+    Promise.all([fetchGalleryImages(), fetchProperties()]).then(([galleryRes, propsRes]) => {
+      let items: GalleryImage[] = [];
+      if (galleryRes.data) {
+        items = [...galleryRes.data];
       }
+      if (propsRes.data) {
+        const galleryProperties = propsRes.data
+          .filter((p) => p.features?.includes("gallery") || p.display_location?.split(',').includes("gallery"))
+          .map((p) => ({
+            id: p.id,
+            image_url: p.image_url || "",
+            video_url: p.video_url,
+            media_type: (p.video_url ? "video" : "image") as 'image' | 'video',
+            alt_text: p.title,
+            sort_order: p.sort_order,
+          }));
+        items = [...items, ...galleryProperties];
+      }
+      // Sort items by sort_order
+      items.sort((a, b) => a.sort_order - b.sort_order);
+      setCmsItems(items);
       setLoading(false);
     });
   }, []);
@@ -76,7 +90,7 @@ export default function Gallery() {
                 {cmsItems.map((item, i) => (
                   <ScrollReveal key={item.id} delay={i * 0.05}>
                     <div
-                      className="relative overflow-hidden rounded-xl cursor-pointer group aspect-[4/3]"
+                      className="relative overflow-hidden rounded-xl cursor-pointer group aspect-[4/3] border border-border/20 shadow-md"
                       onClick={() => setLightbox(i)}
                     >
                       {item.media_type === "video" && item.video_url ? (
@@ -88,20 +102,28 @@ export default function Gallery() {
                               <Play size={40} className="text-blue-400/40" />
                             </div>
                           )}
-                          <div className="absolute top-3 right-3 px-2 py-1 rounded-full text-[10px] font-bold bg-blue-600/80 text-white flex items-center gap-1">
+                          <div className="absolute top-3 right-3 px-2 py-1 rounded-full text-[10px] font-bold bg-blue-600/80 text-white flex items-center gap-1 z-10">
                             <Play size={10} className="fill-current" /> Video
                           </div>
                         </>
                       ) : (
                         <img
-                          src={formatImageUrl(item.image_url)}
+                          src={resolveImageUrl(item.image_url) || ""}
                           alt={item.alt_text}
                           loading="lazy"
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                         />
                       )}
-                      <div className="absolute inset-0 bg-background/0 group-hover:bg-background/30 transition-colors duration-300 flex items-center justify-center">
-                        <span className="opacity-0 group-hover:opacity-100 transition-opacity text-foreground font-medium">View</span>
+                      
+                      {/* Name Overlay at the bottom */}
+                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-4 pt-10 flex flex-col justify-end">
+                        <p className="text-white font-serif font-semibold text-sm line-clamp-1 group-hover:text-primary transition-colors">
+                          {item.alt_text || "Harsha Group"}
+                        </p>
+                      </div>
+
+                      <div className="absolute inset-0 bg-background/0 group-hover:bg-background/25 transition-colors duration-300 flex items-center justify-center">
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity text-foreground font-medium bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-white/10 text-xs">View</span>
                       </div>
                     </div>
                   </ScrollReveal>
@@ -142,56 +164,73 @@ export default function Gallery() {
       {/* Lightbox */}
       {lightbox !== null && (
         <div
-          className="fixed inset-0 z-[100] bg-background/90 backdrop-blur-xl flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] bg-background/90 backdrop-blur-xl flex flex-col items-center justify-center p-4"
           onClick={() => setLightbox(null)}
         >
           <button className="absolute top-6 right-6 text-foreground hover:text-primary transition-colors" onClick={() => setLightbox(null)}>
             <X size={32} />
           </button>
-          {cmsItems !== null && cmsItems.length > 0 ? (
-            (() => {
-              const item = cmsItems[lightbox];
-              if (item.media_type === "video" && item.video_url) {
-                const ytId = getYoutubeId(item.video_url);
-                if (ytId) {
-                  return (
-                    <iframe
-                      src={`https://www.youtube.com/embed/${ytId}?autoplay=1`}
-                      className="w-full max-w-4xl aspect-video rounded-xl animate-fade-up"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      title={item.alt_text}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  );
-                }
+          
+          <div className="flex flex-col items-center max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
+            {cmsItems !== null && cmsItems.length > 0 ? (
+              (() => {
+                const item = cmsItems[lightbox];
                 return (
-                  <video
-                    src={item.video_url}
-                    className="max-w-full max-h-[85vh] rounded-xl animate-fade-up"
-                    controls
-                    autoPlay
-                    onClick={(e) => e.stopPropagation()}
-                  />
+                  <>
+                    {item.media_type === "video" && item.video_url ? (
+                      (() => {
+                        const ytId = getYoutubeId(item.video_url);
+                        if (ytId) {
+                          return (
+                            <iframe
+                              src={`https://www.youtube.com/embed/${ytId}?autoplay=1`}
+                              className="w-full aspect-video rounded-xl animate-fade-up border border-border/20 shadow-2xl"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                              title={item.alt_text}
+                            />
+                          );
+                        }
+                        return (
+                          <video
+                            src={item.video_url}
+                            className="max-w-full max-h-[75vh] rounded-xl animate-fade-up border border-border/20 shadow-2xl"
+                            controls
+                            autoPlay
+                          />
+                        );
+                      })()
+                    ) : (
+                      <img
+                        src={resolveImageUrl(item.image_url) || ""}
+                        alt={item.alt_text}
+                        className="max-w-full max-h-[75vh] object-contain rounded-xl animate-fade-up border border-border/20 shadow-2xl"
+                      />
+                    )}
+                    {/* Caption at the bottom */}
+                    <div className="mt-4 text-center">
+                      <h4 className="text-white text-lg font-serif font-semibold tracking-wide">
+                        {item.alt_text || "Harsha Group"}
+                      </h4>
+                    </div>
+                  </>
                 );
-              }
-              return (
+              })()
+            ) : (
+              <>
                 <img
-                  src={formatImageUrl(item.image_url)}
-                  alt={item.alt_text}
-                  className="max-w-full max-h-[85vh] object-contain rounded-xl animate-fade-up"
-                  onClick={(e) => e.stopPropagation()}
+                  src={fallbackImages[lightbox].src}
+                  alt={fallbackImages[lightbox].alt}
+                  className="max-w-full max-h-[75vh] object-contain rounded-xl animate-fade-up border border-border/20 shadow-2xl"
                 />
-              );
-            })()
-          ) : (
-            <img
-              src={fallbackImages[lightbox].src}
-              alt={fallbackImages[lightbox].alt}
-              className="max-w-full max-h-[85vh] object-contain rounded-xl animate-fade-up"
-              onClick={(e) => e.stopPropagation()}
-            />
-          )}
+                <div className="mt-4 text-center">
+                  <h4 className="text-white text-lg font-serif font-semibold tracking-wide">
+                    {fallbackImages[lightbox].alt}
+                  </h4>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
     </main>

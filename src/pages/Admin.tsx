@@ -19,6 +19,7 @@ import {
   LayoutGrid,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { ModeToggle } from "@/components/ModeToggle";
 
 type Tab = "properties" | "our_spaces" | "gallery" | "hero" | "content";
 
@@ -115,6 +116,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="flex items-center gap-3">
+            <ModeToggle />
             <Link to="/">
               <Button variant="outline" size="sm" className="gap-1.5 border-primary/30 text-xs">
                 <Home size={14} /> View Site

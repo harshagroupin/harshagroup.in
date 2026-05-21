@@ -4,11 +4,15 @@ import {
   addGalleryImage,
   updateGalleryImage,
   deleteGalleryImage,
+  fetchProperties,
   type GalleryImage,
+  type Property,
+  resolveImageUrl,
 } from "@/lib/cms";
-import { formatImageUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import ImageUploader from "./ImageUploader";
+import VideoUploader from "./VideoUploader";
 import {
   Dialog,
   DialogContent,
@@ -32,7 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function GalleryManager() {
   const { toast } = useToast();
-  const [items, setItems] = useState<GalleryImage[]>([]);
+  const [items, setItems] = useState<(GalleryImage & { is_property?: boolean })[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [addDialog, setAddDialog] = useState(false);
@@ -48,8 +52,33 @@ export default function GalleryManager() {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await fetchGalleryImages();
-    setItems(data || []);
+    const [galleryRes, propsRes] = await Promise.all([
+      fetchGalleryImages(),
+      fetchProperties()
+    ]);
+    
+    let combinedItems: (GalleryImage & { is_property?: boolean })[] = [];
+    if (galleryRes.data) {
+      combinedItems = [...galleryRes.data];
+    }
+    
+    if (propsRes.data) {
+      const galleryProperties = propsRes.data
+        .filter((p) => p.features?.includes("gallery") || p.display_location?.split(',').includes("gallery"))
+        .map((p) => ({
+          id: p.id,
+          image_url: p.image_url || "",
+          video_url: p.video_url,
+          media_type: (p.video_url ? "video" : "image") as 'image' | 'video',
+          alt_text: p.title,
+          sort_order: p.sort_order,
+          is_property: true
+        }));
+      combinedItems = [...combinedItems, ...galleryProperties];
+    }
+    
+    combinedItems.sort((a, b) => a.sort_order - b.sort_order);
+    setItems(combinedItems);
     setLoading(false);
   };
 
@@ -153,7 +182,7 @@ export default function GalleryManager() {
             <div className="flex flex-col items-center justify-center px-3 py-3 border-r border-border/20 bg-secondary/10 gap-1 min-w-[50px]">
               <button
                 onClick={() => swapOrder(index, "up")}
-                disabled={index === 0}
+                disabled={index === 0 || item.is_property}
                 className="p-1 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
               >
                 <ArrowUp size={12} />
@@ -161,7 +190,7 @@ export default function GalleryManager() {
               <span className="text-xs font-bold text-primary/80 tabular-nums">{item.sort_order}</span>
               <button
                 onClick={() => swapOrder(index, "down")}
-                disabled={index === items.length - 1}
+                disabled={index === items.length - 1 || item.is_property}
                 className="p-1 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
               >
                 <ArrowDown size={12} />
@@ -184,7 +213,7 @@ export default function GalleryManager() {
                   </div>
                 </>
               ) : item.image_url ? (
-                <img src={formatImageUrl(item.image_url)} alt={item.alt_text} className="w-full h-full object-cover" />
+                <img src={resolveImageUrl(item.image_url) || ""} alt={item.alt_text} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-secondary/30 flex items-center justify-center">
                   <ImageIcon size={20} className="text-muted-foreground/30" />
@@ -194,10 +223,18 @@ export default function GalleryManager() {
 
             {/* Details */}
             <div className="flex-1 p-3 flex flex-col justify-center min-w-0">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${item.media_type === "video" ? "bg-blue-500/20 text-blue-400" : "bg-emerald-500/20 text-emerald-400"}`}>
                   {item.media_type === "video" ? "Video" : "Image"}
                 </span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-secondary/80 text-muted-foreground border border-border/40">
+                  Order Position: {item.sort_order}
+                </span>
+                {item.is_property && (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                    Linked to Property
+                  </span>
+                )}
               </div>
               <p className="text-xs text-muted-foreground truncate">{item.alt_text || "No description"}</p>
               <p className="text-[10px] text-muted-foreground/50 truncate mt-0.5">
@@ -207,12 +244,20 @@ export default function GalleryManager() {
 
             {/* Actions */}
             <div className="flex items-center gap-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onClick={() => { setEditItem(item); setEditDialog(true); }} className="p-2 rounded-lg bg-secondary/50 hover:bg-primary/20 text-foreground transition-colors">
-                <Pencil size={12} />
-              </button>
-              <button onClick={() => handleDelete(item.id)} className="p-2 rounded-lg bg-destructive/20 hover:bg-destructive text-destructive-foreground transition-colors">
-                <Trash2 size={12} />
-              </button>
+              {item.is_property ? (
+                <span className="text-[10px] text-muted-foreground/60 italic px-2">
+                  Edit in Properties
+                </span>
+              ) : (
+                <>
+                  <button onClick={() => { setEditItem(item); setEditDialog(true); }} className="p-2 rounded-lg bg-secondary/50 hover:bg-primary/20 text-foreground transition-colors">
+                    <Pencil size={12} />
+                  </button>
+                  <button onClick={() => handleDelete(item.id)} className="p-2 rounded-lg bg-destructive/20 hover:bg-destructive text-destructive-foreground transition-colors">
+                    <Trash2 size={12} />
+                  </button>
+                </>
+              )}
             </div>
           </div>
         ))}
@@ -255,25 +300,43 @@ export default function GalleryManager() {
             {newItem.media_type === "image" ? (
               <div className="space-y-2">
                 <label className="text-sm text-muted-foreground flex items-center gap-1.5">
-                  <ImageIcon size={14} className="text-primary" /> Image URL
+                  <ImageIcon size={14} className="text-primary" /> Image
                 </label>
+                <ImageUploader
+                  bucket="hero-images"
+                  currentUrl={newItem.image_url || null}
+                  onUpload={(url) => setNewItem({ ...newItem, image_url: url })}
+                  onRemove={() => setNewItem({ ...newItem, image_url: "" })}
+                  label=""
+                />
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-px bg-border/40" />
+                  <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">or paste URL</span>
+                  <div className="flex-1 h-px bg-border/40" />
+                </div>
                 <Input
                   value={newItem.image_url || ""}
                   onChange={(e) => setNewItem({ ...newItem, image_url: e.target.value })}
                   placeholder="https://example.com/image.jpg"
                   className="bg-secondary/50 border-border/40"
                 />
-                {newItem.image_url && (
-                  <div className="rounded-xl overflow-hidden border border-border/30">
-                    <img src={formatImageUrl(newItem.image_url)} alt="Preview" className="w-full h-40 object-cover" />
-                  </div>
-                )}
               </div>
             ) : (
               <div className="space-y-2">
                 <label className="text-sm text-muted-foreground flex items-center gap-1.5">
-                  <Video size={14} className="text-blue-400" /> Video URL
+                  <Video size={14} className="text-blue-400" /> Video
                 </label>
+                <VideoUploader
+                  bucket="hero-images"
+                  currentUrl={newItem.video_url || null}
+                  onUpload={(url) => setNewItem({ ...newItem, video_url: url, media_type: "video" })}
+                  onRemove={() => setNewItem({ ...newItem, video_url: null })}
+                />
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-px bg-border/40" />
+                  <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">or paste URL</span>
+                  <div className="flex-1 h-px bg-border/40" />
+                </div>
                 <Input
                   value={newItem.video_url || ""}
                   onChange={(e) => setNewItem({ ...newItem, video_url: e.target.value || null })}
@@ -336,26 +399,43 @@ export default function GalleryManager() {
                 </div>
               )
             ) : editItem.image_url ? (
-              <img src={formatImageUrl(editItem.image_url)} alt="" className="w-full h-40 object-cover rounded-xl" />
+              <img src={resolveImageUrl(editItem.image_url) || ""} alt="" className="w-full h-40 object-cover rounded-xl" />
             ) : null}
 
             {/* URL field */}
             <div className="space-y-2">
               <label className="text-sm text-muted-foreground">
-                {editItem.media_type === "video" ? "Video URL" : "Image URL"}
+                {editItem.media_type === "video" ? "Video URL" : "Image"}
               </label>
-              <Input
-                value={editItem.media_type === "video" ? (editItem.video_url || "") : (editItem.image_url || "")}
-                onChange={(e) => {
-                  if (editItem.media_type === "video") {
-                    setEditItem({ ...editItem, video_url: e.target.value || null });
-                  } else {
-                    setEditItem({ ...editItem, image_url: e.target.value });
-                  }
-                }}
-                placeholder={editItem.media_type === "video" ? "Video URL..." : "Image URL..."}
-                className="bg-secondary/50 border-border/40"
-              />
+              {editItem.media_type === "image" ? (
+                <>
+                  <ImageUploader
+                    bucket="hero-images"
+                    currentUrl={editItem.image_url || null}
+                    onUpload={(url) => setEditItem({ ...editItem, image_url: url })}
+                    onRemove={() => setEditItem({ ...editItem, image_url: "" })}
+                    label=""
+                  />
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-px bg-border/40" />
+                    <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">or paste URL</span>
+                    <div className="flex-1 h-px bg-border/40" />
+                  </div>
+                  <Input
+                    value={editItem.image_url || ""}
+                    onChange={(e) => setEditItem({ ...editItem, image_url: e.target.value })}
+                    placeholder="Image URL..."
+                    className="bg-secondary/50 border-border/40"
+                  />
+                </>
+              ) : (
+                <Input
+                  value={editItem.video_url || ""}
+                  onChange={(e) => setEditItem({ ...editItem, video_url: e.target.value || null })}
+                  placeholder="Video URL..."
+                  className="bg-secondary/50 border-border/40"
+                />
+              )}
             </div>
 
             {/* Alt Text */}

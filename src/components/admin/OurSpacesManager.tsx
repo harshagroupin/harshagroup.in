@@ -9,13 +9,8 @@ import {
 import { formatImageUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import ImageUploader from "./ImageUploader";
+import VideoUploader from "./VideoUploader";
 import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
@@ -31,14 +26,12 @@ import {
   MapPin,
   Loader2,
   Building2,
-  Star,
   Video,
   X,
-  Tag,
   FileText,
+  GripVertical,
   ArrowUp,
   ArrowDown,
-  LayoutGrid,
   ImageIcon,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -66,27 +59,58 @@ export default function OurSpacesManager() {
   const [saving, setSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<Partial<Property>>(emptyProperty);
-  const [newFeature, setNewFeature] = useState("");
 
   const load = async () => {
     setLoading(true);
     const { data } = await fetchProperties();
-    // Only show properties assigned to "our_spaces"
-    const filtered = (data || []).filter((p) => p.display_location === "our_spaces");
+    // Only show properties assigned to our_spaces
+    const filtered = (data || []).filter((p) => p.features?.includes("our_spaces") || p.display_location === "our_spaces");
     setProperties(filtered);
     setLoading(false);
   };
 
   useEffect(() => { load(); }, []);
 
+  const toggleLocation = (location: 'homepage' | 'our_spaces' | 'gallery') => {
+    const current = editItem.display_location ? editItem.display_location.split(',') : [];
+    let updated: string[];
+    if (current.includes(location)) {
+      updated = current.filter((l) => l !== location);
+    } else {
+      updated = [...current, location];
+    }
+    setEditItem({
+      ...editItem,
+      display_location: updated.join(',') || 'none'
+    });
+  };
+
   const handleSave = async () => {
-    if (!editItem.title || !editItem.location || !editItem.price) {
-      toast({ title: "Please fill required fields", variant: "destructive" });
+    if (!editItem.title || !editItem.location) {
+      toast({ title: "Please fill required fields (Title and Location)", variant: "destructive" });
       return;
     }
     setSaving(true);
-    // Always set display_location to our_spaces for items from this manager
-    const payload = { ...editItem, display_location: "our_spaces" as const };
+
+    const currentLocations = editItem.display_location ? editItem.display_location.split(',') : [];
+    
+    // Choose a singular display_location that satisfies the check constraint ('homepage' | 'our_spaces' | 'none')
+    let dbDisplayLocation: 'homepage' | 'our_spaces' | 'none' = 'none';
+    if (currentLocations.includes('homepage')) {
+      dbDisplayLocation = 'homepage';
+    } else if (currentLocations.includes('our_spaces')) {
+      dbDisplayLocation = 'our_spaces';
+    }
+
+    // Fill in default values for other database non-null columns if empty
+    const payload = {
+      ...editItem,
+      price: editItem.price || "",
+      area: editItem.area || "",
+      category: editItem.category || "office",
+      features: currentLocations, // Store display locations in features column
+      display_location: dbDisplayLocation
+    };
     const { error } = await upsertProperty(payload);
     if (error) {
       toast({ title: "Error saving", description: error.message, variant: "destructive" });
@@ -109,38 +133,19 @@ export default function OurSpacesManager() {
   };
 
   const openEdit = (p: Property) => {
-    setEditItem({ ...p, features: p.features || [] });
-    setNewFeature("");
+    // If features contains locations, use features as display_location, else fallback to p.display_location
+    const currentLocs = p.features && p.features.length > 0 ? p.features : [p.display_location || "our_spaces"];
+    setEditItem({
+      ...p,
+      features: p.features || [],
+      display_location: currentLocs.filter(l => ['homepage', 'our_spaces', 'gallery'].includes(l)).join(',')
+    });
     setDialogOpen(true);
   };
 
   const openNew = () => {
-    setEditItem({ ...emptyProperty, sort_order: properties.length + 1 });
-    setNewFeature("");
+    setEditItem({ ...emptyProperty, sort_order: properties.length + 1, display_location: "our_spaces" });
     setDialogOpen(true);
-  };
-
-  const addFeature = () => {
-    const trimmed = newFeature.trim();
-    if (!trimmed) return;
-    const current = editItem.features || [];
-    if (current.includes(trimmed)) return;
-    setEditItem({ ...editItem, features: [...current, trimmed] });
-    setNewFeature("");
-  };
-
-  const removeFeature = (feature: string) => {
-    setEditItem({
-      ...editItem,
-      features: (editItem.features || []).filter((f) => f !== feature),
-    });
-  };
-
-  const handleFeatureKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addFeature();
-    }
   };
 
   // Swap sort order of two properties
@@ -221,12 +226,9 @@ export default function OurSpacesManager() {
             <div className="flex-1 p-4 flex flex-col justify-center min-w-0">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <h3 className="font-semibold text-sm truncate">{p.title}</h3>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold gold-gradient text-primary-foreground">
-                  {p.type}
-                </span>
-                {p.is_featured && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/20 text-primary border border-primary/30">
-                    <Star size={10} className="inline mr-0.5 -mt-0.5" /> Featured
+                {p.type && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold gold-gradient text-primary-foreground">
+                    {p.type}
                   </span>
                 )}
                 {p.video_url && (
@@ -236,28 +238,34 @@ export default function OurSpacesManager() {
                 )}
               </div>
               <div className="flex items-center gap-1 text-muted-foreground text-xs mb-1">
-                <MapPin size={10} className="text-primary" />
+                <MapPin size={10} className="text-primary flex-shrink-0" />
                 <span className="truncate">{p.location}</span>
               </div>
-              <div className="flex gap-3 text-xs">
-                <span className="gold-text font-bold">{p.price}</span>
-                <span className="text-muted-foreground">{p.area}</span>
-              </div>
-              {/* Features tags preview */}
-              {p.features && p.features.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-1.5">
-                  {p.features.slice(0, 4).map((f) => (
-                    <span key={f} className="px-1.5 py-0.5 rounded text-[9px] bg-secondary/50 text-muted-foreground border border-border/30">
-                      {f}
-                    </span>
-                  ))}
-                  {p.features.length > 4 && (
-                    <span className="px-1.5 py-0.5 rounded text-[9px] text-muted-foreground/60">
-                      +{p.features.length - 4} more
-                    </span>
-                  )}
+              {/* Price & Area preview */}
+              {(p.price || p.area) && (
+                <div className="flex gap-3 text-xs mb-2">
+                  {p.price && <span className="gold-text font-bold">{p.price}</span>}
+                  {p.area && <span className="text-muted-foreground">{p.area}</span>}
                 </div>
               )}
+              {/* Display Locations */}
+              <div className="flex flex-wrap gap-1">
+                {(p.features?.includes('homepage') || p.display_location === 'homepage') && (
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary/20 text-primary border border-primary/30">
+                    Homepage
+                  </span>
+                )}
+                {(p.features?.includes('our_spaces') || p.display_location === 'our_spaces') && (
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    Our Spaces
+                  </span>
+                )}
+                {p.features?.includes('gallery') && (
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                    Gallery
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Actions */}
@@ -274,7 +282,7 @@ export default function OurSpacesManager() {
 
         {properties.length === 0 && (
           <div className="text-center py-16 text-muted-foreground/60">
-            <LayoutGrid size={48} className="mx-auto mb-4 opacity-30" />
+            <Building2 size={48} className="mx-auto mb-4 opacity-30" />
             <p>No spaces added yet. Click "Add Space" to get started.</p>
           </div>
         )}
@@ -290,43 +298,54 @@ export default function OurSpacesManager() {
           </DialogHeader>
 
           <div className="space-y-5 mt-4">
-            {/* ── Image URL ── */}
+            {/* ── Image Upload + URL ── */}
             <div className="space-y-2">
               <label className="text-sm text-muted-foreground flex items-center gap-1.5">
-                <ImageIcon size={14} className="text-primary" /> Image URL
+                <ImageIcon size={14} className="text-primary" /> Space Image
               </label>
+              <ImageUploader
+                bucket="hero-images"
+                currentUrl={editItem.image_url || null}
+                onUpload={(url) => setEditItem({ ...editItem, image_url: url })}
+                onRemove={() => setEditItem({ ...editItem, image_url: null })}
+                label=""
+              />
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-px bg-border/40" />
+                <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">or paste URL</span>
+                <div className="flex-1 h-px bg-border/40" />
+              </div>
               <Input
                 value={editItem.image_url || ""}
                 onChange={(e) => setEditItem({ ...editItem, image_url: e.target.value || null })}
                 placeholder="https://example.com/space-image.jpg"
                 className="bg-secondary/50 border-border/40"
               />
-              {editItem.image_url && (
-                <div className="relative group rounded-xl overflow-hidden border border-border/30 bg-secondary/30">
-                  <img src={formatImageUrl(editItem.image_url)} alt="Preview" className="w-full h-48 object-cover" />
-                  <button
-                    onClick={() => setEditItem({ ...editItem, image_url: null })}
-                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-destructive/80 hover:bg-destructive text-destructive-foreground transition-colors opacity-0 group-hover:opacity-100"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              )}
-              <p className="text-[11px] text-muted-foreground/60">Paste direct image URL link</p>
             </div>
 
-            {/* ── Video URL ── */}
+            {/* ── Video Upload + URL ── */}
             <div className="space-y-2">
               <label className="text-sm text-muted-foreground flex items-center gap-1.5">
-                <Video size={14} className="text-blue-400" /> Video URL
+                <Video size={14} className="text-blue-400" /> Space Video
               </label>
+              <VideoUploader
+                bucket="hero-images"
+                currentUrl={editItem.video_url || null}
+                onUpload={(url) => setEditItem({ ...editItem, video_url: url })}
+                onRemove={() => setEditItem({ ...editItem, video_url: null })}
+              />
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-px bg-border/40" />
+                <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">or paste URL</span>
+                <div className="flex-1 h-px bg-border/40" />
+              </div>
               <Input
                 value={editItem.video_url || ""}
                 onChange={(e) => setEditItem({ ...editItem, video_url: e.target.value || null })}
                 placeholder="https://www.youtube.com/watch?v=... or direct video link"
                 className="bg-secondary/50 border-border/40"
               />
-              <p className="text-[11px] text-muted-foreground/60">Paste YouTube URL or direct video file URL</p>
+              <p className="text-[11px] text-muted-foreground/60">YouTube URL or direct video file (MP4, MOV, WebM)</p>
             </div>
 
             {/* ── Name / Title ── */}
@@ -343,7 +362,7 @@ export default function OurSpacesManager() {
             {/* ── Description ── */}
             <div className="space-y-2">
               <label className="text-sm text-muted-foreground flex items-center gap-1.5">
-                <FileText size={14} /> Description
+                <FileText size={14} /> Description (optional)
               </label>
               <textarea
                 value={editItem.description || ""}
@@ -365,122 +384,92 @@ export default function OurSpacesManager() {
               />
             </div>
 
-            {/* ── Price & Area ── */}
+            {/* ── Type ── */}
+            <div className="space-y-2">
+              <label className="text-sm text-muted-foreground">Type (optional)</label>
+              <Input
+                value={editItem.type || ""}
+                onChange={(e) => setEditItem({ ...editItem, type: e.target.value })}
+                placeholder="Premium, Flexible, Corporate..."
+                className="bg-secondary/50 border-border/40"
+              />
+            </div>
+
+            {/* ── Rate / Price & Area / Sq Ft ── */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm text-muted-foreground">Price *</label>
+                <label className="text-sm text-muted-foreground">Rate / Price (optional)</label>
                 <Input
                   value={editItem.price || ""}
                   onChange={(e) => setEditItem({ ...editItem, price: e.target.value })}
-                  placeholder="₹55,000/mo"
+                  placeholder="e.g. ₹55,000/mo"
                   className="bg-secondary/50 border-border/40"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm text-muted-foreground">Area</label>
+                <label className="text-sm text-muted-foreground">Area / Square Ft (optional)</label>
                 <Input
                   value={editItem.area || ""}
                   onChange={(e) => setEditItem({ ...editItem, area: e.target.value })}
-                  placeholder="1,500 sq ft"
+                  placeholder="e.g. 1,500 sq ft"
                   className="bg-secondary/50 border-border/40"
                 />
               </div>
             </div>
 
-            {/* ── Type & Category ── */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm text-muted-foreground">Type</label>
-                <Input
-                  value={editItem.type || ""}
-                  onChange={(e) => setEditItem({ ...editItem, type: e.target.value })}
-                  placeholder="Premium, Flexible, Corporate, Sale..."
-                  className="bg-secondary/50 border-border/40"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm text-muted-foreground">Category</label>
-                <Select
-                  value={editItem.category || "office"}
-                  onValueChange={(v) => setEditItem({ ...editItem, category: v as 'office' | 'shop' })}
-                >
-                  <SelectTrigger className="bg-secondary/50 border-border/40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="office">Office</SelectItem>
-                    <SelectItem value="shop">Shop</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* ── Features / Amenities ── */}
+            {/* ── Display Order ── */}
             <div className="space-y-2">
               <label className="text-sm text-muted-foreground flex items-center gap-1.5">
-                <Tag size={14} className="text-primary" /> Features / Amenities
+                <GripVertical size={14} /> Display Order
               </label>
-              <div className="flex gap-2">
-                <Input
-                  value={newFeature}
-                  onChange={(e) => setNewFeature(e.target.value)}
-                  onKeyDown={handleFeatureKeyDown}
-                  placeholder="e.g. Parking, AC, Lift, CCTV..."
-                  className="bg-secondary/50 border-border/40 flex-1"
-                />
-                <Button
-                  type="button"
-                  onClick={addFeature}
-                  variant="outline"
-                  size="sm"
-                  className="border-primary/30 text-primary hover:bg-primary/10 px-3"
-                >
-                  <Plus size={14} />
-                </Button>
-              </div>
-              <p className="text-[11px] text-muted-foreground/60">Press Enter or click + to add. Click ✕ to remove.</p>
-
-              {/* Feature Tags */}
-              {(editItem.features || []).length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2 p-3 rounded-lg bg-secondary/20 border border-border/20">
-                  {(editItem.features || []).map((f) => (
-                    <span
-                      key={f}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20"
-                    >
-                      {f}
-                      <button
-                        onClick={() => removeFeature(f)}
-                        className="ml-0.5 hover:text-destructive transition-colors"
-                      >
-                        <X size={12} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
+              <Input
+                type="number"
+                value={editItem.sort_order || 0}
+                onChange={(e) => setEditItem({ ...editItem, sort_order: Number(e.target.value) })}
+                className="bg-secondary/50 border-border/40"
+              />
+              <p className="text-[11px] text-muted-foreground/60">
+                Lower numbers appear first (1, 2, 3...)
+              </p>
             </div>
 
-            {/* ── Sort Order & Featured ── */}
-            <div className="grid grid-cols-2 gap-4 items-end">
-              <div className="space-y-2">
-                <label className="text-sm text-muted-foreground">Display Order</label>
-                <Input
-                  type="number"
-                  value={editItem.sort_order || 0}
-                  onChange={(e) => setEditItem({ ...editItem, sort_order: Number(e.target.value) })}
-                  className="bg-secondary/50 border-border/40"
-                />
-                <p className="text-[11px] text-muted-foreground/60">
-                  Lower numbers appear first (1, 2, 3...)
-                </p>
-              </div>
-              <div className="flex items-center gap-3 pb-1">
-                <Switch
-                  checked={editItem.is_featured || false}
-                  onCheckedChange={(v) => setEditItem({ ...editItem, is_featured: v })}
-                />
-                <label className="text-sm text-muted-foreground">Featured</label>
+            {/* ── Display Locations Toggles ── */}
+            <div className="space-y-3 pt-2 border-t border-border/20">
+              <label className="text-sm font-semibold text-muted-foreground">Display Locations</label>
+              
+              <div className="flex flex-col gap-3 p-4 rounded-xl bg-secondary/20 border border-border/20">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <label className="text-sm font-medium">Show on Homepage</label>
+                    <p className="text-xs text-muted-foreground">Display in the Featured section on the home page</p>
+                  </div>
+                  <Switch
+                    checked={editItem.display_location?.split(',').includes('homepage') || false}
+                    onCheckedChange={() => toggleLocation('homepage')}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-border/10">
+                  <div className="space-y-0.5">
+                    <label className="text-sm font-medium">Show in Our Spaces</label>
+                    <p className="text-xs text-muted-foreground">Display on the "Our Spaces" page list</p>
+                  </div>
+                  <Switch
+                    checked={editItem.display_location?.split(',').includes('our_spaces') || false}
+                    onCheckedChange={() => toggleLocation('our_spaces')}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-border/10">
+                  <div className="space-y-0.5">
+                    <label className="text-sm font-medium">Show in Gallery</label>
+                    <p className="text-xs text-muted-foreground">Display image/video in the "Gallery" page</p>
+                  </div>
+                  <Switch
+                    checked={editItem.display_location?.split(',').includes('gallery') || false}
+                    onCheckedChange={() => toggleLocation('gallery')}
+                  />
+                </div>
               </div>
             </div>
 

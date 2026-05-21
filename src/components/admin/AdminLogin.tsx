@@ -46,7 +46,11 @@ export default function AdminLogin({ onLogin }: Props) {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="glass rounded-2xl p-8 space-y-5">
+        <form onSubmit={handleSubmit} autoComplete="off" className="glass rounded-2xl p-8 space-y-5">
+          {/* Dummy fields to trick browser's password manager autofill */}
+          <input type="text" name="prevent_autofill_email" style={{ display: "none" }} tabIndex={-1} autoComplete="off" />
+          <input type="password" name="prevent_autofill_pass" style={{ display: "none" }} tabIndex={-1} autoComplete="off" />
+
           {error && (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
               <AlertCircle size={16} />
@@ -59,12 +63,14 @@ export default function AdminLogin({ onLogin }: Props) {
             <div className="relative">
               <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
-                type="email"
-                placeholder="admin@harshagroup.in"
+                type="text"
+                name="admin_email_field"
+                placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="pl-10 bg-secondary/50 border-border/40 h-12"
                 required
+                autoComplete="one-time-code"
               />
             </div>
           </div>
@@ -75,11 +81,13 @@ export default function AdminLogin({ onLogin }: Props) {
               <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="password"
-                placeholder="••••••••"
+                name="admin_password_field"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="pl-10 bg-secondary/50 border-border/40 h-12"
                 required
+                autoComplete="one-time-code"
               />
             </div>
           </div>

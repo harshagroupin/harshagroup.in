@@ -5,16 +5,16 @@ import { Building2, Eye, Target, Award } from "lucide-react";
 
 export default function About() {
   return (
-    <main className="">
+    <main className="pt-20">
       {/* Hero */}
       <section className="relative h-[50vh] min-h-[400px] flex items-center justify-center overflow-hidden">
         <img src={buildingImg} alt="Harsha Group building" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80" />
         <div className="relative z-10 text-center px-4">
-          <h1 className="font-serif text-4xl md:text-6xl font-bold mb-4">
+          <h1 className="font-serif text-4xl md:text-6xl font-bold mb-4 text-white">
             About <span className="gold-text">Harsha Group</span>
           </h1>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">Building trust, delivering excellence since 2009.</p>
+          <p className="text-white/80 text-lg max-w-2xl mx-auto">Building trust, delivering excellence since 2009.</p>
         </div>
       </section>
 

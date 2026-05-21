@@ -23,7 +23,7 @@ export default function Navbar() {
             <span className="font-serif text-lg md:text-xl font-bold tracking-tight gold-text leading-none">
               Harsha Group
             </span>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-widest leading-none mt-1 font-medium">Real Estate</span>
+            <span className="text-[10px] text-white/70 uppercase tracking-widest leading-none mt-1 font-medium">Real Estate</span>
           </div>
         </Link>
 
@@ -33,7 +33,7 @@ export default function Navbar() {
             <Link
               key={l.to}
               to={l.to}
-              className={`text-sm font-medium transition-all duration-300 hover:text-primary relative group ${pathname === l.to ? "text-primary" : "text-foreground/80"
+              className={`text-sm font-medium transition-all duration-300 hover:text-primary relative group ${pathname === l.to ? "text-primary" : "text-white/80"
                 }`}
             >
               {l.label}
@@ -43,7 +43,7 @@ export default function Navbar() {
         </div>
 
         {/* Mobile toggle */}
-        <button className="md:hidden text-foreground" onClick={() => setOpen(!open)}>
+        <button className="md:hidden text-white" onClick={() => setOpen(!open)}>
           {open ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
@@ -57,7 +57,7 @@ export default function Navbar() {
                 key={l.to}
                 to={l.to}
                 onClick={() => setOpen(false)}
-                className={`text-sm font-medium py-2 ${pathname === l.to ? "text-primary" : "text-foreground/80"
+                className={`text-sm font-medium py-2 ${pathname === l.to ? "text-primary" : "text-white/80"
                   }`}
               >
                 {l.label}

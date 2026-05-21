@@ -36,7 +36,7 @@ export default function OurSpaces() {
         setCmsProperties(null);
       } else {
         const filtered = (data || []).filter(
-          (p) => p.display_location === "our_spaces"
+          (p) => p.features?.includes("our_spaces") || p.display_location?.split(',').includes("our_spaces")
         );
         setCmsProperties(filtered);
       }
@@ -48,12 +48,12 @@ export default function OurSpaces() {
     <main className="">
       <section className="relative h-[40vh] min-h-[320px] flex items-center justify-center overflow-hidden">
         <img src={heroImg} alt="Premium commercial spaces" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80" />
         <div className="relative z-10 text-center px-4">
-          <h1 className="font-serif text-4xl md:text-6xl font-bold mb-4">
+          <h1 className="font-serif text-4xl md:text-6xl font-bold mb-4 text-white">
             Our <span className="gold-text">Spaces</span>
           </h1>
-          <p className="text-muted-foreground text-lg">Premium offices, retail outlets and mall spaces — curated for growth.</p>
+          <p className="text-white/80 text-lg">Premium offices, retail outlets and mall spaces — curated for growth.</p>
         </div>
       </section>
 

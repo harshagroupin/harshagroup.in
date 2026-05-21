@@ -6,6 +6,51 @@
 
 @layer base {
   :root {
+    --background: 240 5% 96%;
+    --foreground: 240 10% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 15%;
+
+    --primary: 43 70% 50%;
+    --primary-foreground: 0 0% 4%;
+
+    --secondary: 240 5% 88%;
+    --secondary-foreground: 240 6% 10%;
+
+    --muted: 240 5% 88%;
+    --muted-foreground: 240 4% 40%;
+
+    --accent: 43 70% 50%;
+    --accent-foreground: 0 0% 4%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 240 6% 82%;
+    --input: 240 6% 82%;
+    --ring: 43 70% 50%;
+
+    --radius: 0.25rem;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 43 70% 50%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 5% 88%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 240 6% 82%;
+    --sidebar-ring: 43 70% 50%;
+
+    --gold: 43 70% 45%;
+    --gold-light: 43 70% 55%;
+    --gold-dark: 43 70% 35%;
+  }
+
+  .dark {
     --background: 240 10% 5%;
     --foreground: 0 0% 95%;
 
@@ -68,27 +113,27 @@
 
 @layer components {
   .glass {
-    @apply bg-card/70 backdrop-blur-md border border-border/50;
+    @apply bg-card/80 backdrop-blur-md border border-border/80 shadow-sm;
   }
 
   .glass-strong {
-    @apply bg-background/90 backdrop-blur-lg border-b border-border/50;
+    @apply bg-background/95 backdrop-blur-lg border-b border-border/80 shadow-sm;
   }
 
   .gold-glow {
-    box-shadow: 0 8px 30px hsl(43 70% 50% / 0.2);
+    box-shadow: 0 8px 30px hsl(var(--gold) / 0.2);
   }
 
   .gold-glow-sm {
-    box-shadow: 0 4px 15px hsl(43 70% 50% / 0.15);
+    box-shadow: 0 4px 15px hsl(var(--gold) / 0.15);
   }
 
   .gold-gradient {
-    background: linear-gradient(135deg, hsl(43 70% 40%), hsl(43 70% 50%), hsl(43 70% 65%));
+    background: linear-gradient(135deg, hsl(var(--gold-dark)), hsl(var(--gold)), hsl(var(--gold-light)));
   }
 
   .gold-text {
-    background: linear-gradient(135deg, hsl(43 70% 50%), hsl(43 70% 65%));
+    background: linear-gradient(135deg, hsl(var(--gold-dark)), hsl(var(--gold)));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
