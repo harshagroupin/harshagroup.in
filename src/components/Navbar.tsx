@@ -5,6 +5,7 @@ import { Menu, X } from "lucide-react";
 const navLinks = [
   { to: "/", label: "Home" },
   { to: "/our-spaces", label: "Our Spaces" },
+  { to: "/fractional-model", label: "Fractional Model" },
   { to: "/gallery", label: "Gallery" },
   { to: "/about", label: "About Us" },
   { to: "/contact", label: "Contact" },
@@ -15,10 +16,14 @@ export default function Navbar() {
   const { pathname } = useLocation();
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0A0A0A]/50 backdrop-blur-md border-b border-border/20">
+    <nav
+      className="fixed top-0 left-0 right-0 z-50 navbar-glass"
+      aria-label="Main navigation"
+      role="navigation"
+    >
       <div className="max-w-7xl mx-auto px-4 md:px-8 flex items-center justify-between h-16 md:h-20">
-        <Link to="/" className="flex items-center gap-3 group">
-          <img src="/logo.png" alt="Harsha Group Logo" className="w-10 h-10 object-contain transition-transform duration-300 group-hover:scale-105" />
+        <Link to="/" className="flex items-center gap-3 group" aria-label="Harsha Group — Home">
+          <img src="/logo.png" alt="Harsha Group Logo" className="w-10 h-10 object-contain transition-transform duration-300 group-hover:scale-105" width={40} height={40} />
           <div className="flex flex-col justify-center">
             <span className="font-serif text-lg md:text-xl font-bold tracking-tight gold-text leading-none">
               Harsha Group
@@ -43,10 +48,18 @@ export default function Navbar() {
         </div>
 
         {/* Mobile toggle */}
-        <button className="md:hidden text-white" onClick={() => setOpen(!open)}>
+        <button
+          className="md:hidden text-white"
+          onClick={() => setOpen(!open)}
+          aria-label={open ? "Close menu" : "Open menu"}
+          aria-expanded={open}
+        >
           {open ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
+
+      {/* AI glow line under navbar */}
+      <div className="ai-line w-full" />
 
       {/* Mobile menu */}
       {open && (
@@ -69,4 +82,3 @@ export default function Navbar() {
     </nav>
   );
 }
-

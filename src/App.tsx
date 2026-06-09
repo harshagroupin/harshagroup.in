@@ -14,6 +14,7 @@ const OurSpaces = lazy(() => import("./pages/OurSpaces"));
 const Gallery = lazy(() => import("./pages/Gallery"));
 const Contact = lazy(() => import("./pages/Contact"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const FractionalModel = lazy(() => import("./pages/FractionalModel"));
 
 // Lazy load Admin so Supabase is only imported when needed
 const Admin = lazy(() => import("./pages/Admin"));
@@ -69,6 +70,7 @@ function AppLayout() {
           <Route path="/shops" element={<Navigate to="/our-spaces" replace />} />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/fractional-model" element={<FractionalModel />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

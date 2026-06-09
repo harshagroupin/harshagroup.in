@@ -1,0 +1,11 @@
+# Harsha Group — harshagroup.in
+# Allow all search engine crawlers
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://harshagroup.in/sitemap.xml
+
+# Block admin panel from indexing
+Disallow: /admin

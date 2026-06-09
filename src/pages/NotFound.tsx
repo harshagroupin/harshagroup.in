@@ -1,11 +1,21 @@
 import { Link } from "react-router-dom";
 import { Home, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import SEOHead from "@/components/SEOHead";
 
 export default function NotFound() {
   return (
-    <main className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="text-center max-w-lg">
+    <main className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
+      <SEOHead
+        title="Page Not Found — Harsha Group"
+        description="The page you're looking for doesn't exist or has been moved. Return to Harsha Group homepage."
+        noindex={true}
+      />
+
+      {/* Subtle background elements */}
+      <div className="absolute inset-0 dot-grid opacity-[0.02] pointer-events-none" aria-hidden="true" />
+
+      <div className="text-center max-w-lg relative z-10">
         <div className="mb-6">
           <span className="font-serif text-8xl md:text-9xl font-bold gold-text">404</span>
         </div>

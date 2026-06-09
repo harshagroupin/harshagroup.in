@@ -109,9 +109,16 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Playfair Display', serif;
   }
+
+  /* Enhanced selection color */
+  ::selection {
+    background: hsl(43 70% 50% / 0.3);
+    color: inherit;
+  }
 }
 
 @layer components {
+  /* --- Glass Morphism --- */
   .glass {
     @apply bg-card/80 backdrop-blur-md border border-border/80 shadow-sm;
   }
@@ -120,6 +127,20 @@
     @apply bg-background/95 backdrop-blur-lg border-b border-border/80 shadow-sm;
   }
 
+  /* Enhanced glass with glow on hover */
+  .glass-ai {
+    @apply bg-card/60 backdrop-blur-xl border border-border/40 shadow-sm;
+    transition: border-color 0.4s ease, box-shadow 0.4s ease;
+  }
+  .glass-ai:hover {
+    border-color: hsl(43 70% 50% / 0.25);
+    box-shadow:
+      0 0 30px hsl(43 70% 50% / 0.06),
+      0 8px 32px rgba(0, 0, 0, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  /* --- Gold Effects --- */
   .gold-glow {
     box-shadow: 0 8px 30px hsl(var(--gold) / 0.2);
   }
@@ -139,16 +160,91 @@
     background-clip: text;
   }
 
+  /* --- Animated Gold Border --- */
+  .gold-border-glow {
+    position: relative;
+  }
+  .gold-border-glow::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      hsl(43 70% 50% / 0),
+      hsl(43 70% 50% / 0.3),
+      hsl(43 70% 50% / 0)
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  .gold-border-glow:hover::before {
+    opacity: 1;
+  }
+
+  /* --- Layout --- */
   .section-padding {
     @apply py-20 md:py-28 px-4 md:px-8;
   }
 
+  /* --- Card Hover --- */
   .hover-tilt {
     transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .hover-tilt:hover {
     transform: translateY(-4px);
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  }
+
+  /* --- Dot Grid Pattern --- */
+  .dot-grid {
+    background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.15) 1px, transparent 0);
+    background-size: 24px 24px;
+  }
+
+  /* --- Shimmer Loading --- */
+  .shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.04),
+      transparent
+    );
+    animation: shimmer 2s infinite;
+  }
+
+  /* --- AI Glow Line --- */
+  .ai-line {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(43 70% 50% / 0.4),
+      hsl(43 70% 55% / 0.6),
+      hsl(43 70% 50% / 0.4),
+      transparent
+    );
+  }
+
+  /* --- Navbar glass upgrade --- */
+  .navbar-glass {
+    background: rgba(10, 10, 10, 0.45);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   }
 }
 
@@ -183,13 +279,55 @@
     to { opacity: 1; transform: scale(1); }
   }
 
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  @keyframes glow-pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.8; }
+  }
+
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  @keyframes border-flow {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 200% 0%; }
+  }
+
   .animate-float { animation: float 6s ease-in-out infinite; }
   .animate-float-delayed { animation: float-delayed 8s ease-in-out infinite; }
   .animate-pulse-gold { animation: pulse-gold 2s ease-in-out infinite; }
   .animate-scroll-left { animation: scroll-left 30s linear infinite; }
   .animate-fade-up { animation: fade-up 0.8s ease-out forwards; }
+  .animate-shimmer { animation: shimmer 2s infinite; }
+  .animate-glow-pulse { animation: glow-pulse 3s ease-in-out infinite; }
+  .animate-gradient-shift {
+    background-size: 200% 200%;
+    animation: gradient-shift 8s ease infinite;
+  }
 }
 
 html {
   scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(240 10% 5%);
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(43 70% 50% / 0.3);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(43 70% 50% / 0.5);
 }

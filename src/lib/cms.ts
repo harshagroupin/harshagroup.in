@@ -151,8 +151,10 @@ export async function fetchPageContent(sectionKey: string) {
 export async function updatePageContent(sectionKey: string, content: any) {
   return supabase
     .from('page_content')
-    .update({ content, updated_at: new Date().toISOString() })
-    .eq('section_key', sectionKey)
+    .upsert(
+      { section_key: sectionKey, content, updated_at: new Date().toISOString() },
+      { onConflict: 'section_key' }
+    )
     .select()
     .single();
 }

@@ -6,6 +6,7 @@ import OurSpacesManager from "@/components/admin/OurSpacesManager";
 import GalleryManager from "@/components/admin/GalleryManager";
 import HeroManager from "@/components/admin/HeroManager";
 import PageContentManager from "@/components/admin/PageContentManager";
+import FractionalModelManager from "@/components/admin/FractionalModelManager";
 import { Button } from "@/components/ui/button";
 import {
   Building2,
@@ -17,11 +18,12 @@ import {
   AlertTriangle,
   Home,
   LayoutGrid,
+  PieChart,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ModeToggle } from "@/components/ModeToggle";
 
-type Tab = "properties" | "our_spaces" | "gallery" | "hero" | "content";
+type Tab = "properties" | "our_spaces" | "gallery" | "hero" | "content" | "fractional";
 
 const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
   { key: "properties", label: "Properties", icon: Building2 },
@@ -29,6 +31,7 @@ const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
   { key: "gallery", label: "Gallery", icon: ImageIcon },
   { key: "hero", label: "Hero Section", icon: Sparkles },
   { key: "content", label: "Page Content", icon: FileText },
+  { key: "fractional", label: "Fractional Model", icon: PieChart },
 ];
 
 export default function AdminDashboard() {
@@ -159,6 +162,7 @@ export default function AdminDashboard() {
         {activeTab === "gallery" && <GalleryManager />}
         {activeTab === "hero" && <HeroManager />}
         {activeTab === "content" && <PageContentManager />}
+        {activeTab === "fractional" && <FractionalModelManager />}
       </div>
     </div>
   );

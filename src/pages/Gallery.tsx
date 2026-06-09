@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import ScrollReveal from "@/components/ScrollReveal";
+import SEOHead from "@/components/SEOHead";
+import Breadcrumb from "@/components/Breadcrumb";
+import AnimatedBackground from "@/components/AnimatedBackground";
 import { X, Play, Loader2, ImageIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { fetchGalleryImages, fetchProperties, fetchPageContent, type GalleryImage, type Property, resolveImageUrl } from "@/lib/cms";
 import useEmblaCarousel from "embla-carousel-react";
@@ -15,19 +18,19 @@ import galleryImg1 from "@/assets/gallery-1.jpg";
 import galleryImg2 from "@/assets/gallery-2.jpg";
 
 const fallbackImages = [
-  { src: heroImg, alt: "Luxury mall interior" },
-  { src: officeImg1, alt: "Premium office space" },
-  { src: shopImg1, alt: "Retail outlet" },
-  { src: buildingImg, alt: "Building exterior" },
-  { src: officeImg2, alt: "Co-working space" },
-  { src: shopImg2, alt: "Food court area" },
-  { src: galleryImg1, alt: "Conference room" },
-  { src: galleryImg2, alt: "Mall escalators" },
+  { src: heroImg, alt: "Harsha City Mall luxury interior — premium commercial space" },
+  { src: officeImg1, alt: "Premium office space with modern amenities at Harsha City Mall" },
+  { src: shopImg1, alt: "Retail outlet on ground floor of Harsha City Mall" },
+  { src: buildingImg, alt: "Harsha City Mall building exterior in Indirapuram" },
+  { src: officeImg2, alt: "Co-working space with contemporary design" },
+  { src: shopImg2, alt: "Food court area with high footfall at Harsha Mall" },
+  { src: galleryImg1, alt: "Conference room with professional setup" },
+  { src: galleryImg2, alt: "Mall escalators and modern architecture" },
 ];
 
 // Hero slider images (best shots from fallback)
 const heroSlides = [
-  { src: heroImg, caption: "Luxury Mall Interior" },
+  { src: heroImg, caption: "Premium commercial spaces at Harsha City Mall, Indirapuram" },
 ];
 
 // YouTube helpers
@@ -97,13 +100,26 @@ export default function Gallery() {
   }, []);
 
   return (
-    <main className="">
+    <main>
+      <SEOHead
+        title="Gallery — Harsha Group Commercial Property Photos & Videos"
+        description="Explore photos and videos of Harsha Group's premium commercial properties in Indirapuram, Ghaziabad. View our office spaces, retail outlets, mall interiors, and building exteriors."
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "ImageGallery",
+          "name": "Harsha Group Property Gallery",
+          "description": "Photos and videos of premium commercial properties by Harsha Group in Indirapuram, Ghaziabad.",
+          "url": "https://harshagroup.in/gallery",
+          "isPartOf": { "@id": "https://harshagroup.in/#website" },
+        }}
+      />
+
       {/* Hero Slider */}
-      <section className="relative h-[50vh] min-h-[360px] flex items-center justify-center overflow-hidden">
+      <section className="relative h-[50vh] min-h-[360px] flex items-center justify-center overflow-hidden" aria-label="Gallery hero">
         <div className="absolute inset-0" ref={emblaRef}>
           <div className="flex h-full">
             {(cmsSlides
-              ? cmsSlides.map((url, i) => ({ src: url, caption: `Slide ${i + 1}` }))
+              ? cmsSlides.map((url, i) => ({ src: url, caption: `Harsha Group property gallery image ${i + 1}` }))
               : heroSlides
             ).map((slide, i) => (
               <div key={i} className="flex-[0_0_100%] min-w-0 relative h-full">
@@ -119,6 +135,7 @@ export default function Gallery() {
 
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80 pointer-events-none" />
+        <AnimatedBackground />
 
         {/* Arrows — only when multiple slides */}
         {(cmsSlides || heroSlides).length > 1 && (
@@ -165,8 +182,10 @@ export default function Gallery() {
         )}
       </section>
 
+      <Breadcrumb items={[{ label: "Gallery" }]} />
+
       {/* Gallery Grid */}
-      <section className="section-padding">
+      <section className="section-padding" aria-label="Property gallery">
         <div className="max-w-7xl mx-auto">
           {loading ? (
             <div className="flex justify-center py-20">
@@ -185,7 +204,7 @@ export default function Gallery() {
                       {item.media_type === "video" && item.video_url ? (
                         <>
                           {getYoutubeThumbnail(item.video_url) ? (
-                            <img src={getYoutubeThumbnail(item.video_url)!} alt={item.alt_text} loading="lazy" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                            <img src={getYoutubeThumbnail(item.video_url)!} alt={item.alt_text || "Harsha Group property video"} loading="lazy" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                           ) : (
                             <div className="w-full h-full bg-blue-950/20 flex items-center justify-center">
                               <Play size={40} className="text-blue-400/40" />
@@ -198,7 +217,7 @@ export default function Gallery() {
                       ) : (
                         <img
                           src={resolveImageUrl(item.image_url) || ""}
-                          alt={item.alt_text}
+                          alt={item.alt_text || "Harsha Group commercial property"}
                           loading="lazy"
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                         />
@@ -258,8 +277,10 @@ export default function Gallery() {
         <div
           className="fixed inset-0 z-[100] bg-background/90 backdrop-blur-xl flex flex-col items-center justify-center p-4"
           onClick={() => setLightbox(null)}
+          role="dialog"
+          aria-label="Image lightbox"
         >
-          <button className="absolute top-6 right-6 text-foreground hover:text-primary transition-colors" onClick={() => setLightbox(null)}>
+          <button className="absolute top-6 right-6 text-foreground hover:text-primary transition-colors" onClick={() => setLightbox(null)} aria-label="Close lightbox">
             <X size={32} />
           </button>
           
@@ -279,7 +300,7 @@ export default function Gallery() {
                               className="w-full aspect-video rounded-xl animate-fade-up border border-border/20 shadow-2xl"
                               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                               allowFullScreen
-                              title={item.alt_text}
+                              title={item.alt_text || "Harsha Group property video"}
                             />
                           );
                         }
@@ -295,7 +316,7 @@ export default function Gallery() {
                     ) : (
                       <img
                         src={resolveImageUrl(item.image_url) || ""}
-                        alt={item.alt_text}
+                        alt={item.alt_text || "Harsha Group property image"}
                         className="max-w-full max-h-[75vh] object-contain rounded-xl animate-fade-up border border-border/20 shadow-2xl"
                       />
                     )}

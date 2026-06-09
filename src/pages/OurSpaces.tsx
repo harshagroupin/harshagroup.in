@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import ScrollReveal from "@/components/ScrollReveal";
 import PropertyCard from "@/components/PropertyCard";
 import ContactForm from "@/components/ContactForm";
+import SEOHead from "@/components/SEOHead";
+import Breadcrumb from "@/components/Breadcrumb";
+import AnimatedBackground from "@/components/AnimatedBackground";
 import { fetchProperties, resolveImageUrl, fetchPageContent, type Property } from "@/lib/cms";
 import { Loader2, Building2, ChevronLeft, ChevronRight } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
@@ -17,7 +20,7 @@ import shopImg1 from "@/assets/shop-space-1.jpg";
 import shopImg2 from "@/assets/shop-space-2.jpg";
 
 const heroSlides = [
-  { src: heroImg, caption: "Premium Mall Spaces" },
+  { src: heroImg, caption: "Premium mall spaces at Harsha City Mall, Indirapuram" },
 ];
 
 // Static fallback properties (used when CMS has no data)
@@ -82,14 +85,27 @@ export default function OurSpaces() {
   }, []);
 
   return (
-    <main className="">
+    <main>
+      <SEOHead
+        title="Our Spaces — Premium Shops, Offices & Mall Spaces in Indirapuram"
+        description="Browse Harsha Group's premium commercial spaces for sale and lease in Indirapuram, Ghaziabad. Office suites, retail outlets, food court spaces, co-working hubs, and anchor store spaces at Harsha City Mall."
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          "name": "Our Spaces — Commercial Properties by Harsha Group",
+          "description": "Premium shops, offices and mall spaces for sale and lease in Indirapuram, Ghaziabad.",
+          "url": "https://harshagroup.in/our-spaces",
+          "isPartOf": { "@id": "https://harshagroup.in/#website" },
+        }}
+      />
+
       {/* Hero with auto-sliding carousel */}
-      <section className="relative h-[50vh] min-h-[360px] flex items-center justify-center overflow-hidden">
+      <section className="relative h-[50vh] min-h-[360px] flex items-center justify-center overflow-hidden" aria-label="Our spaces hero">
         {/* Embla viewport */}
         <div className="absolute inset-0" ref={emblaRef}>
           <div className="flex h-full">
             {(cmsSlides
-              ? cmsSlides.map((url, i) => ({ src: url, caption: `Slide ${i + 1}` }))
+              ? cmsSlides.map((url, i) => ({ src: url, caption: `Harsha Group commercial space showcase ${i + 1}` }))
               : heroSlides
             ).map((slide, i) => (
               <div key={i} className="flex-[0_0_100%] min-w-0 relative h-full">
@@ -105,6 +121,7 @@ export default function OurSpaces() {
 
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80 pointer-events-none" />
+        <AnimatedBackground />
 
         {/* Arrows — only when multiple slides */}
         {(cmsSlides || heroSlides).length > 1 && (
@@ -151,8 +168,10 @@ export default function OurSpaces() {
         )}
       </section>
 
+      <Breadcrumb items={[{ label: "Our Spaces" }]} />
+
       {/* Properties Grid */}
-      <section className="section-padding">
+      <section className="section-padding" aria-label="Available commercial properties">
         <div className="max-w-7xl mx-auto">
           {loading ? (
             <div className="flex justify-center py-20">

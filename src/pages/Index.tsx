@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Building2, Shield, MapPin, TrendingUp, Star, Loader2 } from "lucide-react";
 import ScrollReveal from "@/components/ScrollReveal";
 import PropertyCard from "@/components/PropertyCard";
+import SEOHead from "@/components/SEOHead";
+import FAQSection from "@/components/FAQSection";
+import AnimatedBackground from "@/components/AnimatedBackground";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useCounter } from "@/hooks/useCounter";
 import { fetchHeroContent, fetchProperties, fetchPageContent, resolveImageUrl, type HeroContent, type Property } from "@/lib/cms";
@@ -30,6 +33,29 @@ const testimonials = [
   { name: "Priya Mehta", role: "Business Owner", feedback: "The retail space we leased at Harsha City Mall has been transformative for our business. Premium location with excellent footfall.", rating: 5 },
   { name: "Amit Gupta", role: "Corporate Client", feedback: "Outstanding office spaces with world-class amenities. Harsha Group truly understands the needs of modern businesses.", rating: 5 },
   { name: "Sneha Kapoor", role: "Franchise Owner", feedback: "From site selection to handover, the entire process was seamless. Highly recommended for commercial real estate.", rating: 4 },
+];
+
+const homepageFAQs = [
+  {
+    question: "What types of commercial spaces does Harsha Group offer?",
+    answer: "Harsha Group offers a wide range of premium commercial spaces including office suites, retail outlets, mall spaces, food court areas, co-working hubs, and anchor store spaces. All our properties are located in prime commercial corridors of Indirapuram, Ghaziabad.",
+  },
+  {
+    question: "Where are Harsha Group properties located?",
+    answer: "Our flagship property, Harsha City Mall, is located in Shakti Khand 2, Indirapuram, Ghaziabad, Uttar Pradesh. This is one of the most sought-after commercial locations in NCR with excellent connectivity to Delhi, Noida, and Greater Noida.",
+  },
+  {
+    question: "What is the fractional investment model by Harsha Group?",
+    answer: "Harsha Group pioneered India's first fractional ownership model in commercial real estate. It allows investors to own a fraction of premium commercial properties with minimal investment, earning both rental income and capital appreciation. Start investing with as little as a few lakhs.",
+  },
+  {
+    question: "How can I schedule a site visit?",
+    answer: "You can schedule a site visit by calling us at +91 8448440725, emailing info@harshagroup.in, or filling out the contact form on our website. Our team is available Monday to Saturday, 10 AM to 7 PM.",
+  },
+  {
+    question: "What ROI can I expect from Harsha Group properties?",
+    answer: "Our commercial properties in Indirapuram have consistently delivered above-market returns. With prime locations, strong tenant profiles including national and international brands, and professional property management, investors have seen significant capital appreciation and steady rental yields.",
+  },
 ];
 
 function StatCounter({ value, suffix, format, label, start }: { value: number; suffix: string; format?: boolean; label: string; start: boolean }) {
@@ -135,9 +161,24 @@ export default function Index() {
   }
 
   return (
-    <main className="">
+    <main>
+      <SEOHead
+        title="Harsha Group | Premium Commercial Real Estate in Indirapuram, Ghaziabad"
+        description="Harsha Group offers premium commercial spaces — shops, offices, mall spaces & retail outlets in Indirapuram, Ghaziabad. Invest, Lease & Grow with us. 15+ years of trusted excellence."
+        canonical="https://harshagroup.in"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "WebPage",
+          "name": "Harsha Group — Premium Commercial Real Estate",
+          "description": "Premium commercial spaces in Indirapuram, Ghaziabad. Shops, offices, mall spaces & retail outlets.",
+          "url": "https://harshagroup.in",
+          "isPartOf": { "@id": "https://harshagroup.in/#website" },
+          "about": { "@id": "https://harshagroup.in/#organization" },
+        }}
+      />
+
       {/* Hero */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden" aria-label="Hero">
         <div className="absolute inset-0" ref={emblaRef}>
           <div className="flex h-full">
             {slides.map((slide, index) => (
@@ -151,6 +192,7 @@ export default function Index() {
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         frameBorder="0"
                         tabIndex={-1}
+                        title="Harsha Group promotional video"
                       />
                     </div>
                   ) : (
@@ -166,7 +208,7 @@ export default function Index() {
                 ) : (
                   <img
                     src={slide.url}
-                    alt={`Slide ${index + 1}`}
+                    alt={`Harsha Group premium commercial property - ${index === 0 ? "Harsha City Mall exterior view" : `commercial space showcase ${index + 1}`}`}
                     className="w-full h-full object-cover"
                   />
                 )}
@@ -176,7 +218,8 @@ export default function Index() {
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80 pointer-events-none" />
         </div>
 
-        {/* Optional subtle grid overlay can be added here if needed, but clean is better for premium */}
+        {/* AI-themed background elements */}
+        <AnimatedBackground />
 
         <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
           {!heroSettings.hideHeading && (
@@ -210,8 +253,11 @@ export default function Index() {
       </section>
 
       {/* Featured Properties */}
-      <section className="section-padding">
-        <div className="max-w-7xl mx-auto">
+      <section className="section-padding relative" aria-label="Featured properties">
+        {/* Subtle background */}
+        <div className="absolute inset-0 dot-grid opacity-[0.015] pointer-events-none" aria-hidden="true" />
+
+        <div className="max-w-7xl mx-auto relative">
           <ScrollReveal>
             <div className="text-center mb-14">
               <h2 className="font-serif text-3xl md:text-5xl font-bold tracking-tight mb-4">
@@ -262,8 +308,9 @@ export default function Index() {
       </section>
 
       {/* Why Choose Us */}
-      <section className="section-padding bg-card/30">
-        <div className="max-w-7xl mx-auto">
+      <section className="section-padding bg-card/30 relative" aria-label="Why choose Harsha Group">
+        <div className="absolute inset-0 dot-grid opacity-[0.02] pointer-events-none" aria-hidden="true" />
+        <div className="max-w-7xl mx-auto relative">
           <ScrollReveal>
             <div className="text-center mb-14">
               <h2 className="font-serif text-3xl md:text-5xl font-bold tracking-tight mb-4">
@@ -279,7 +326,7 @@ export default function Index() {
               { icon: TrendingUp, title: "High ROI", desc: "Proven track record of delivering exceptional returns on investments." },
             ].map((item, i) => (
               <ScrollReveal key={i} delay={i * 0.1}>
-                <div className="glass rounded-md p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group">
+                <div className="glass-ai rounded-xl p-6 text-center transition-all duration-300 hover:-translate-y-1 group gold-border-glow">
                   <div className="w-16 h-16 mx-auto mb-4 rounded-xl gold-gradient flex items-center justify-center group-hover:gold-glow transition-all">
                     <item.icon size={28} className="text-primary-foreground" />
                   </div>
@@ -293,7 +340,7 @@ export default function Index() {
       </section>
 
       {/* Stats */}
-      <section className="section-padding" ref={statsReveal.ref}>
+      <section className="section-padding relative" ref={statsReveal.ref} aria-label="Statistics">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
           {stats.map((s, i) => (
             <StatCounter key={i} {...s} start={statsReveal.isVisible} />
@@ -302,7 +349,7 @@ export default function Index() {
       </section>
 
       {/* Channel Partners */}
-      <section className="py-16 bg-card/30 overflow-hidden">
+      <section className="py-16 bg-card/30 overflow-hidden" aria-label="Channel partners">
         <ScrollReveal>
           <div className="text-center mb-10">
             <h2 className="font-serif text-3xl md:text-4xl font-bold tracking-tight">
@@ -322,7 +369,7 @@ export default function Index() {
       </section>
 
       {/* Testimonials */}
-      <section className="section-padding">
+      <section className="section-padding relative" aria-label="Client testimonials">
         <div className="max-w-7xl mx-auto">
           <ScrollReveal>
             <div className="text-center mb-14">
@@ -334,7 +381,7 @@ export default function Index() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {testimonials.map((t, i) => (
               <ScrollReveal key={i} delay={i * 0.1}>
-                <div className="glass rounded-md p-6 md:p-8 relative">
+                <div className="glass-ai rounded-xl p-6 md:p-8 relative gold-border-glow">
                   <div className="flex gap-1 mb-4">
                     {Array.from({ length: 5 }).map((_, j) => (
                       <Star key={j} size={18} className={j < t.rating ? "fill-primary text-primary" : "text-muted-foreground/30"} />
@@ -350,6 +397,17 @@ export default function Index() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="bg-card/30 relative">
+        <div className="absolute inset-0 dot-grid opacity-[0.02] pointer-events-none" aria-hidden="true" />
+        <FAQSection
+          title="Frequently Asked Questions"
+          subtitle="Find answers to common questions about Harsha Group's commercial properties and investment opportunities."
+          faqs={homepageFAQs}
+          pageId="homepage"
+        />
       </section>
 
       {/* Contact Form removed */}
