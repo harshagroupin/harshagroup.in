@@ -20,6 +20,11 @@ export function formatImageUrl(url: string | undefined | null): string {
   return url;
 }
 
+export function resolveCmsImageUrl(url: string | null | undefined): string | null {
+  if (!url || url.startsWith("DUMMY_")) return null;
+  return formatImageUrl(url);
+}
+
 export function getYoutubeEmbed(url: string | undefined | null, isBackground = false): string | null {
   if (!url) return null;
   const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtube-nocookie\.com\/embed\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/);

@@ -3,24 +3,26 @@ import ScrollReveal from "@/components/ScrollReveal";
 import SEOHead from "@/components/SEOHead";
 import Breadcrumb from "@/components/Breadcrumb";
 import AnimatedBackground from "@/components/AnimatedBackground";
-import buildingImg from "@/assets/building-exterior.jpg";
-import officeImg from "@/assets/office-space-2.jpg";
-import { Building2, Eye, Target, Award, ChevronLeft, ChevronRight } from "lucide-react";
+import { fetchPageContent } from "@/lib/cms";
+import { formatImageUrl } from "@/lib/utils";
+import { Building2, Eye, Target, Award, ChevronLeft, ChevronRight, MapPin, Handshake } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
-
-const heroSlides = [
-  { src: buildingImg, caption: "Harsha Group Building - Premium commercial real estate in Indirapuram" },
-];
 
 export default function About() {
   const [activeSlide, setActiveSlide] = useState(0);
+  const [cmsSlides, setCmsSlides] = useState<string[]>([]);
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 40 });
+
+  const slideItems = cmsSlides.map((url, index) => ({
+    src: formatImageUrl(url),
+    caption: `Harsha Group commercial real estate showcase ${index + 1}`,
+  }));
 
   const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
   const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
 
   useEffect(() => {
-    if (!emblaApi) return;
+    if (!emblaApi || slideItems.length < 2) return;
     const onSelect = () => setActiveSlide(emblaApi.selectedScrollSnap());
     emblaApi.on("select", onSelect);
     const interval = setInterval(() => emblaApi.scrollNext(), 4500);
@@ -28,13 +30,24 @@ export default function About() {
       clearInterval(interval);
       emblaApi.off("select", onSelect);
     };
-  }, [emblaApi]);
+  }, [emblaApi, slideItems.length]);
+
+  useEffect(() => {
+    fetchPageContent("about_slides").then((res) => {
+      const content = res.data?.content;
+      if (Array.isArray(content)) {
+        setCmsSlides(content.filter(Boolean) as string[]);
+      }
+    }).catch(() => {
+      setCmsSlides([]);
+    });
+  }, []);
 
   return (
     <main>
       <SEOHead
         title="About Harsha Group | 15+ Years of Trusted Real Estate Excellence"
-        description="Learn about Harsha Group — a leading commercial real estate developer in Indirapuram, Ghaziabad with 15+ years of experience. 50+ projects completed, 1200+ happy clients. Building trust, delivering excellence since 2009."
+        description="Learn about Harsha Group - a leading commercial real estate developer in Indirapuram, Ghaziabad with 15+ years of experience. 50+ projects completed, 1200+ happy clients."
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "AboutPage",
@@ -46,28 +59,31 @@ export default function About() {
         }}
       />
 
-      {/* Hero Slider — starts below navbar */}
-      <section className="relative mt-16 md:mt-20 h-[50vh] min-h-[400px] flex items-center justify-center overflow-hidden" aria-label="About hero">
-        <div className="absolute inset-0" ref={emblaRef}>
-          <div className="flex h-full">
-            {heroSlides.map((slide, i) => (
-              <div key={i} className="flex-[0_0_100%] min-w-0 relative h-full">
-                <img
-                  src={slide.src}
-                  alt={slide.caption}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ))}
+      <section className="relative h-[55vh] min-h-[420px] flex items-center justify-center overflow-hidden" aria-label="About hero">
+        {slideItems.length > 0 ? (
+          <div className="absolute inset-0" ref={emblaRef}>
+            <div className="flex h-full">
+              {slideItems.map((slide, index) => (
+                <div key={`${slide.src}-${index}`} className="flex-[0_0_100%] min-w-0 relative h-full">
+                  <img
+                    src={slide.src}
+                    alt={slide.caption}
+                    className="w-full h-full object-cover object-bottom"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="absolute inset-0 bg-[linear-gradient(145deg,#111113_0%,#181611_50%,#09090b_100%)]">
+            <div className="absolute inset-0 dot-grid opacity-[0.035]" />
+          </div>
+        )}
 
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/25 to-black/80 pointer-events-none" />
         <AnimatedBackground />
 
-        {/* Arrows — only when multiple slides */}
-        {heroSlides.length > 1 && (
+        {slideItems.length > 1 && (
           <>
             <button
               onClick={scrollPrev}
@@ -86,25 +102,23 @@ export default function About() {
           </>
         )}
 
-        {/* Title */}
-        <div className="relative z-10 text-center px-4">
+        <div className="relative z-10 text-center px-4 pt-16 md:pt-20">
           <h1 className="font-serif text-4xl md:text-6xl font-bold mb-4 text-white">
             About <span className="gold-text">Harsha Group</span>
           </h1>
           <p className="text-white/80 text-lg max-w-2xl mx-auto">Building trust, delivering excellence since 2009.</p>
         </div>
 
-        {/* Dot indicators — only when multiple slides */}
-        {heroSlides.length > 1 && (
+        {slideItems.length > 1 && (
           <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-            {heroSlides.map((_, i) => (
+            {slideItems.map((_, index) => (
               <button
-                key={i}
-                onClick={() => emblaApi?.scrollTo(i)}
+                key={index}
+                onClick={() => emblaApi?.scrollTo(index)}
                 className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  i === activeSlide ? "bg-primary w-6" : "bg-white/40 hover:bg-white/70"
+                  index === activeSlide ? "bg-primary w-6" : "bg-white/40 hover:bg-white/70"
                 }`}
-                aria-label={`Go to slide ${i + 1}`}
+                aria-label={`Go to slide ${index + 1}`}
               />
             ))}
           </div>
@@ -113,7 +127,6 @@ export default function About() {
 
       <Breadcrumb items={[{ label: "About Us" }]} />
 
-      {/* Company Overview */}
       <section className="section-padding" aria-label="Company overview">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <ScrollReveal>
@@ -125,30 +138,45 @@ export default function About() {
                 Harsha Group has been at the forefront of commercial real estate in Indirapuram, Ghaziabad for over 15 years. We specialize in premium commercial properties including office spaces, retail outlets, and mall spaces.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                Our flagship project, Harsha City Mall, stands as a testament to our commitment to quality, design, and value creation. Located in the heart of Shakti Khand 2, it has become a thriving commercial hub.
+                Our flagship project, Harsha City Mall, reflects our commitment to quality, design, and value creation. Located in Shakti Khand 2, it has grown into a trusted commercial destination.
               </p>
               <p className="text-muted-foreground leading-relaxed">
-                We partner with leading brands and businesses to create spaces that inspire growth, foster innovation, and deliver exceptional returns on investment.
+                We partner with leading brands and businesses to create spaces that support growth, improve visibility, and deliver long-term value.
               </p>
             </article>
           </ScrollReveal>
+
           <ScrollReveal delay={0.2}>
-            <img src={officeImg} alt="Premium office spaces at Harsha City Mall, Indirapuram" loading="lazy" className="rounded-2xl w-full object-cover h-[400px]" />
+            <div className="rounded-lg border border-border/50 bg-card/60 p-8 md:p-10 shadow-sm">
+              <div className="grid grid-cols-2 gap-6">
+                {[
+                  { icon: Building2, value: "50+", label: "Projects delivered" },
+                  { icon: Handshake, value: "1,200+", label: "Clients served" },
+                  { icon: Award, value: "15+", label: "Years experience" },
+                  { icon: MapPin, value: "NCR", label: "Prime corridors" },
+                ].map((item) => (
+                  <div key={item.label} className="border-l border-primary/40 pl-4">
+                    <item.icon size={22} className="text-primary mb-4" />
+                    <div className="font-serif text-3xl font-bold text-foreground">{item.value}</div>
+                    <div className="text-sm text-muted-foreground mt-1">{item.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </ScrollReveal>
         </div>
       </section>
 
-      {/* Mission & Vision */}
       <section className="section-padding bg-card/30 relative" aria-label="Mission and vision">
         <div className="absolute inset-0 dot-grid opacity-[0.02] pointer-events-none" aria-hidden="true" />
         <div className="max-w-7xl mx-auto relative grid grid-cols-1 md:grid-cols-2 gap-8">
           {[
             { icon: Target, title: "Our Mission", desc: "To deliver world-class commercial spaces that empower businesses to thrive, while creating sustainable value for our investors and partners." },
-            { icon: Eye, title: "Our Vision", desc: "To be the most trusted name in commercial real estate, setting new benchmarks for quality, innovation, and customer satisfaction in North India." },
-          ].map((item, i) => (
-            <ScrollReveal key={i} delay={i * 0.15}>
-              <div className="glass-ai rounded-2xl p-8 md:p-10 h-full gold-border-glow">
-                <div className="w-14 h-14 rounded-xl gold-gradient flex items-center justify-center mb-6">
+            { icon: Eye, title: "Our Vision", desc: "To be the most trusted name in commercial real estate, setting new benchmarks for quality, reliability, and customer satisfaction in North India." },
+          ].map((item, index) => (
+            <ScrollReveal key={item.title} delay={index * 0.15}>
+              <div className="glass-ai rounded-lg p-8 md:p-10 h-full gold-border-glow">
+                <div className="w-14 h-14 rounded-lg gold-gradient flex items-center justify-center mb-6">
                   <item.icon size={24} className="text-primary-foreground" />
                 </div>
                 <h3 className="font-serif text-2xl font-bold mb-4">{item.title}</h3>
@@ -159,7 +187,6 @@ export default function About() {
         </div>
       </section>
 
-      {/* Experience */}
       <section className="section-padding" aria-label="Trust and experience">
         <div className="max-w-7xl mx-auto">
           <ScrollReveal>
@@ -174,10 +201,10 @@ export default function About() {
               { icon: Award, title: "Award-Winning Projects", desc: "Recognized for excellence in commercial real estate development." },
               { icon: Building2, title: "50+ Projects Delivered", desc: "A robust portfolio of successful commercial developments across NCR." },
               { icon: Target, title: "1200+ Happy Clients", desc: "A growing community of satisfied investors and business owners." },
-            ].map((item, i) => (
-              <ScrollReveal key={i} delay={i * 0.1}>
-                <div className="glass-ai rounded-2xl p-6 text-center hover-tilt gold-border-glow">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-xl gold-gradient flex items-center justify-center">
+            ].map((item, index) => (
+              <ScrollReveal key={item.title} delay={index * 0.1}>
+                <div className="glass-ai rounded-lg p-6 text-center hover-tilt gold-border-glow">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-lg gold-gradient flex items-center justify-center">
                     <item.icon size={28} className="text-primary-foreground" />
                   </div>
                   <h3 className="font-serif text-lg font-semibold mb-2">{item.title}</h3>

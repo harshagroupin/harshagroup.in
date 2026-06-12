@@ -78,7 +78,7 @@ export default function FractionalInvestForm({ inline = false }: Props) {
   }
 
   return (
-    <section id="fractional-invest-form" className={`${bgClass} py-20 md:py-28 px-4`} aria-label="Fractional investment enquiry">
+    <section id="fractional-invest-form" className={`${bgClass} pt-8 md:pt-10 pb-20 md:pb-28 px-4`} aria-label="Fractional investment enquiry">
       <div className="max-w-6xl mx-auto">
         <ScrollReveal>
           {/* Header */}

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { MapPin, Play } from "lucide-react";
+import { ImageIcon, MapPin, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface Props {
@@ -79,13 +79,17 @@ export default function PropertyCard({ image, video, title, location, price, are
               <Play size={10} className="fill-current" /> Video
             </div>
           </>
-        ) : (
+        ) : image ? (
           <img
             src={image}
             alt={title}
             loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
+        ) : (
+          <div className="w-full h-full bg-secondary/40 flex items-center justify-center">
+            <ImageIcon size={36} className="text-muted-foreground/40" />
+          </div>
         )}
         {type && type.trim().length > 0 && (
           <div className="absolute top-4 left-4 px-3 py-1 rounded-sm text-xs font-semibold bg-background/90 text-primary backdrop-blur-md border border-primary/20 uppercase tracking-wider">

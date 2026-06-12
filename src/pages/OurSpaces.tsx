@@ -5,57 +5,34 @@ import ContactForm from "@/components/ContactForm";
 import SEOHead from "@/components/SEOHead";
 import Breadcrumb from "@/components/Breadcrumb";
 import AnimatedBackground from "@/components/AnimatedBackground";
-import { fetchProperties, resolveImageUrl, fetchPageContent, isSupabaseConfigured, type Property } from "@/lib/cms";
-import { Building2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { fetchProperties, resolveImageUrl, fetchPageContent, type Property } from "@/lib/cms";
+import { formatImageUrl } from "@/lib/utils";
+import { Building2, ChevronLeft, ChevronRight } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
-
-// Hero slide images
-import heroImg from "@/assets/hero-mall.jpg";
-import officeImg1 from "@/assets/office-space-1.jpg";
-import officeImg2 from "@/assets/office-space-2.jpg";
-import galleryImg1 from "@/assets/gallery-1.jpg";
-import galleryImg2 from "@/assets/gallery-2.jpg";
-import buildingImg from "@/assets/building-exterior.jpg";
-import shopImg1 from "@/assets/shop-space-1.jpg";
-import shopImg2 from "@/assets/shop-space-2.jpg";
-
-const heroSlides = [
-  { src: heroImg, caption: "Premium mall spaces at Harsha City Mall, Indirapuram" },
-];
-
-// Static fallback properties (used when CMS has no data)
-const fallbackProperties = [
-  { image: officeImg1, title: "Executive Office Suite", location: "Harsha City Mall, Floor 5", price: "₹55,000/mo", area: "1,500 sq ft", type: "Premium" },
-  { image: officeImg2, title: "Co-Working Hub", location: "Harsha Business Center", price: "₹15,000/mo", area: "300 sq ft", type: "Flexible" },
-  { image: galleryImg1, title: "Conference-Ready Office", location: "Tower A, Shakti Khand 2", price: "₹75,000/mo", area: "2,200 sq ft", type: "Corporate" },
-  { image: buildingImg, title: "Full Floor Office", location: "Harsha City Mall, Floor 8", price: "₹2.5 Cr", area: "5,000 sq ft", type: "Sale" },
-  { image: shopImg1, title: "Luxury Brand Outlet", location: "Ground Floor, Harsha City Mall", price: "₹1.2 Cr", area: "1,000 sq ft", type: "Sale" },
-  { image: shopImg2, title: "Food Court Space", location: "Level 2, Harsha City Mall", price: "₹50,000/mo", area: "600 sq ft", type: "Lease" },
-  { image: heroImg, title: "Anchor Store Space", location: "Harsha City Mall", price: "₹3.5 Cr", area: "4,000 sq ft", type: "Sale" },
-  { image: galleryImg2, title: "Fashion Retail Outlet", location: "Level 1, Harsha Mall", price: "₹65,000/mo", area: "750 sq ft", type: "Lease" },
-];
 
 export default function OurSpaces() {
   const [cmsProperties, setCmsProperties] = useState<Property[] | null>(null);
   const [activeSlide, setActiveSlide] = useState(0);
-  const [cmsSlides, setCmsSlides] = useState<string[] | null>(null);
+  const [cmsSlides, setCmsSlides] = useState<string[]>([]);
   const [enquiryMessage, setEnquiryMessage] = useState("");
-  const [loading, setLoading] = useState(isSupabaseConfigured);
+
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 40 });
+
+  const slideItems = cmsSlides.map((url, index) => ({
+    src: formatImageUrl(url),
+    caption: `Harsha Group commercial space showcase ${index + 1}`,
+  }));
 
   const handleEnquire = (title: string, location: string) => {
     const msg = `I am interested in the property: ${title}${location ? ` (${location})` : ""}. Please contact me with more details.`;
     setEnquiryMessage(msg);
   };
 
-  // Embla carousel for hero
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 40 });
-
   const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
   const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
 
-  // Auto-play hero slider
   useEffect(() => {
-    if (!emblaApi) return;
+    if (!emblaApi || slideItems.length < 2) return;
     const onSelect = () => setActiveSlide(emblaApi.selectedScrollSnap());
     emblaApi.on("select", onSelect);
     const interval = setInterval(() => emblaApi.scrollNext(), 4000);
@@ -63,161 +40,152 @@ export default function OurSpaces() {
       clearInterval(interval);
       emblaApi.off("select", onSelect);
     };
-  }, [emblaApi]);
+  }, [emblaApi, slideItems.length]);
 
   useEffect(() => {
-    // Fire both fetches in parallel — page already rendered with fallback
     Promise.all([
       fetchPageContent("our_spaces_slides"),
       fetchProperties(),
     ]).then(([slidesRes, propsRes]) => {
-      if (slidesRes.data?.content && Array.isArray(slidesRes.data.content) && slidesRes.data.content.length > 0) {
-        setCmsSlides(slidesRes.data.content as string[]);
+      const slideContent = slidesRes.data?.content;
+      if (Array.isArray(slideContent)) {
+        setCmsSlides(slideContent.filter(Boolean) as string[]);
       }
+
       if (!propsRes.error) {
         const filtered = (propsRes.data || []).filter(
-          (p) =>
-            p.features?.includes("our_spaces") ||
-            p.display_location?.split(",").includes("our_spaces")
+          (property) =>
+            property.features?.includes("our_spaces") ||
+            property.display_location?.split(",").includes("our_spaces")
         );
         setCmsProperties(filtered);
       }
-      setLoading(false);
+    }).catch(() => {
+      setCmsProperties([]);
     });
   }, []);
 
   return (
     <main>
       <SEOHead
-        title="Our Spaces — Premium Shops, Offices & Mall Spaces in Indirapuram"
+        title="Our Spaces - Premium Shops, Offices & Mall Spaces in Indirapuram"
         description="Browse Harsha Group's premium commercial spaces for sale and lease in Indirapuram, Ghaziabad. Office suites, retail outlets, food court spaces, co-working hubs, and anchor store spaces at Harsha City Mall."
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "CollectionPage",
-          "name": "Our Spaces — Commercial Properties by Harsha Group",
+          "name": "Our Spaces - Commercial Properties by Harsha Group",
           "description": "Premium shops, offices and mall spaces for sale and lease in Indirapuram, Ghaziabad.",
           "url": "https://harshagroup.in/our-spaces",
           "isPartOf": { "@id": "https://harshagroup.in/#website" },
         }}
       />
 
-      {/* Hero with auto-sliding carousel */}
-      <section className="relative mt-16 md:mt-20 h-[50vh] min-h-[360px] flex items-center justify-center overflow-hidden" aria-label="Our spaces hero">
-        {loading ? (
-          <div className="absolute inset-0 bg-[#0B0B0E] flex items-center justify-center">
-            <div className="absolute inset-0 dot-grid opacity-[0.03]" />
-            <Loader2 className="animate-spin text-primary" size={36} />
+      <section className="relative h-[55vh] min-h-[420px] flex items-center justify-center overflow-hidden" aria-label="Our spaces hero">
+        {slideItems.length > 0 ? (
+          <div className="absolute inset-0" ref={emblaRef}>
+            <div className="flex h-full">
+              {slideItems.map((slide, index) => (
+                <div key={`${slide.src}-${index}`} className="flex-[0_0_100%] min-w-0 relative h-full">
+                  <img
+                    src={slide.src}
+                    alt={slide.caption}
+                    className="w-full h-full object-cover object-bottom"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
+          <div className="absolute inset-0 bg-[linear-gradient(145deg,#111113_0%,#181611_50%,#09090b_100%)]">
+            <div className="absolute inset-0 dot-grid opacity-[0.035]" />
+          </div>
+        )}
+
+        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/25 to-black/80 pointer-events-none" />
+        <AnimatedBackground />
+
+        {slideItems.length > 1 && (
           <>
-            {/* Embla viewport */}
-            <div className="absolute inset-0" ref={emblaRef}>
-              <div className="flex h-full">
-                {(cmsSlides
-                  ? cmsSlides.map((url, i) => ({ src: url, caption: `Harsha Group commercial space showcase ${i + 1}` }))
-                  : heroSlides
-                ).map((slide, i) => (
-                  <div key={i} className="flex-[0_0_100%] min-w-0 relative h-full">
-                    <img
-                      src={slide.src}
-                      alt={slide.caption}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80 pointer-events-none" />
-            <AnimatedBackground />
-
-            {/* Arrows — only when multiple slides */}
-            {(cmsSlides || heroSlides).length > 1 && (
-              <>
-                <button
-                  onClick={scrollPrev}
-                  className="absolute left-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm border border-white/20 transition-all"
-                  aria-label="Previous slide"
-                >
-                  <ChevronLeft size={20} />
-                </button>
-                <button
-                  onClick={scrollNext}
-                  className="absolute right-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm border border-white/20 transition-all"
-                  aria-label="Next slide"
-                >
-                  <ChevronRight size={20} />
-                </button>
-              </>
-            )}
-
-            {/* Text */}
-            <div className="relative z-10 text-center px-4">
-              <h1 className="font-serif text-4xl md:text-6xl font-bold mb-4 text-white">
-                Our <span className="gold-text">Spaces</span>
-              </h1>
-              <p className="text-white/80 text-lg">Premium offices, retail outlets and mall spaces — curated for growth.</p>
-            </div>
-
-            {/* Dot indicators — only when multiple slides */}
-            {(cmsSlides || heroSlides).length > 1 && (
-              <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-                {(cmsSlides || heroSlides).map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => emblaApi?.scrollTo(i)}
-                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                      i === activeSlide ? "bg-primary w-6" : "bg-white/40 hover:bg-white/70"
-                    }`}
-                    aria-label={`Go to slide ${i + 1}`}
-                  />
-                ))}
-              </div>
-            )}
+            <button
+              onClick={scrollPrev}
+              className="absolute left-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm border border-white/20 transition-all"
+              aria-label="Previous slide"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              onClick={scrollNext}
+              className="absolute right-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm border border-white/20 transition-all"
+              aria-label="Next slide"
+            >
+              <ChevronRight size={20} />
+            </button>
           </>
+        )}
+
+        <div className="relative z-10 text-center px-4 pt-16 md:pt-20">
+          <h1 className="font-serif text-4xl md:text-6xl font-bold mb-4 text-white">
+            Our <span className="gold-text">Spaces</span>
+          </h1>
+          <p className="text-white/80 text-lg">Premium offices, retail outlets and mall spaces curated for growth.</p>
+        </div>
+
+        {slideItems.length > 1 && (
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+            {slideItems.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => emblaApi?.scrollTo(index)}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  index === activeSlide ? "bg-primary w-6" : "bg-white/40 hover:bg-white/70"
+                }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
+          </div>
         )}
       </section>
 
       <Breadcrumb items={[{ label: "Our Spaces" }]} />
 
-      {/* Properties Grid */}
       <section className="section-padding" aria-label="Available commercial properties">
         <div className="max-w-7xl mx-auto">
-          {/* Show fallback immediately; replace with CMS data when available */}
           {cmsProperties !== null ? (
             cmsProperties.length > 0 ? (
-              /* CMS Properties */
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {cmsProperties.map((p, i) => (
-                  <ScrollReveal key={p.id} delay={i * 0.06}>
+                {cmsProperties.map((property, index) => (
+                  <ScrollReveal key={property.id} delay={index * 0.06}>
                     <PropertyCard
-                      image={resolveImageUrl(p.image_url) || ""}
-                      video={p.video_url}
-                      title={p.title}
-                      location={p.location}
-                      price={p.price}
-                      area={p.area}
-                      type={p.type}
-                      features={p.features}
+                      image={resolveImageUrl(property.image_url) || ""}
+                      video={property.video_url}
+                      title={property.title}
+                      location={property.location}
+                      price={property.price}
+                      area={property.area}
+                      type={property.type}
+                      features={property.features}
                       onEnquire={handleEnquire}
                     />
                   </ScrollReveal>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-20 text-muted-foreground bg-secondary/20 rounded-xl border border-border/40">
+              <div className="text-center py-20 text-muted-foreground bg-secondary/20 rounded-lg border border-border/40">
                 <Building2 size={48} className="mx-auto mb-4 opacity-30" />
                 <p className="text-lg">No spaces currently listed.</p>
               </div>
             )
           ) : (
-            /* Fallback static properties — shown instantly before CMS loads */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {fallbackProperties.map((p, i) => (
-                <ScrollReveal key={i} delay={i * 0.06}>
-                  <PropertyCard {...p} onEnquire={handleEnquire} />
-                </ScrollReveal>
+              {Array.from({ length: 8 }).map((_, index) => (
+                <div key={index} className="rounded-lg overflow-hidden border border-border/30 bg-card/50 animate-pulse">
+                  <div className="h-72 bg-secondary/40" />
+                  <div className="p-4 space-y-3">
+                    <div className="h-4 bg-secondary/60 rounded w-3/4" />
+                    <div className="h-3 bg-secondary/40 rounded w-1/2" />
+                    <div className="h-9 bg-secondary/40 rounded w-full" />
+                  </div>
+                </div>
               ))}
             </div>
           )}

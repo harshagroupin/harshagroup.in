@@ -84,6 +84,31 @@ VALUES (
 );
 
 -- ==========================================
+-- 4.5. INQUIRIES & FRACTIONAL INQUIRIES TABLES
+-- ==========================================
+DROP TABLE IF EXISTS inquiries CASCADE;
+CREATE TABLE inquiries (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name text NOT NULL,
+  phone text NOT NULL,
+  email text NOT NULL,
+  address text,
+  message text,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+DROP TABLE IF EXISTS fractional_inquiries CASCADE;
+CREATE TABLE fractional_inquiries (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name text NOT NULL,
+  phone text NOT NULL,
+  email text NOT NULL,
+  city text NOT NULL,
+  investment_budget text NOT NULL,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- ==========================================
 -- 5. ROW LEVEL SECURITY (RLS) POLICIES
 -- ==========================================
 
@@ -92,6 +117,8 @@ ALTER TABLE properties ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gallery_images ENABLE ROW LEVEL SECURITY;
 ALTER TABLE hero_content ENABLE ROW LEVEL SECURITY;
 ALTER TABLE page_content ENABLE ROW LEVEL SECURITY;
+ALTER TABLE inquiries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE fractional_inquiries ENABLE ROW LEVEL SECURITY;
 
 -- Properties Policies
 CREATE POLICY "Allow public read access on properties" ON properties FOR SELECT USING (true);
@@ -108,6 +135,14 @@ CREATE POLICY "Allow authenticated full access on hero_content" ON hero_content 
 -- Page Content Policies
 CREATE POLICY "Allow public read access on page_content" ON page_content FOR SELECT USING (true);
 CREATE POLICY "Allow authenticated full access on page_content" ON page_content FOR ALL USING (auth.role() = 'authenticated');
+
+-- Inquiries Policies
+CREATE POLICY "Allow public insert access on inquiries" ON inquiries FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow authenticated full access on inquiries" ON inquiries FOR ALL USING (auth.role() = 'authenticated');
+
+-- Fractional Inquiries Policies
+CREATE POLICY "Allow public insert access on fractional_inquiries" ON fractional_inquiries FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow authenticated full access on fractional_inquiries" ON fractional_inquiries FOR ALL USING (auth.role() = 'authenticated');
 
 -- ==========================================
 -- 6. STORAGE BUCKETS (Optional, if using Supabase Storage)

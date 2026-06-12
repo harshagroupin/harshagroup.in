@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Building2, Shield, MapPin, TrendingUp, Star, ArrowRight, Loader2 } from "lucide-react";
+import { Building2, Shield, MapPin, TrendingUp, Star, ArrowRight } from "lucide-react";
 import ScrollReveal from "@/components/ScrollReveal";
 import PropertyCard from "@/components/PropertyCard";
 import SEOHead from "@/components/SEOHead";
@@ -9,10 +9,9 @@ import FAQSection from "@/components/FAQSection";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useCounter } from "@/hooks/useCounter";
-import { fetchHeroContent, fetchProperties, fetchPageContent, resolveImageUrl, isSupabaseConfigured, type HeroContent, type Property } from "@/lib/cms";
-import { formatImageUrl, getYoutubeEmbed } from "@/lib/utils";
+import type { HeroContent, Property } from "@/lib/cms";
+import { formatImageUrl, getYoutubeEmbed, resolveCmsImageUrl } from "@/lib/utils";
 import useEmblaCarousel from "embla-carousel-react";
-import heroImg from "@/assets/hero-mall.jpg";
 
 
 
@@ -83,17 +82,20 @@ export default function Index() {
   // null = loading (show fallback), [] = loaded but empty, [...] = has CMS data
   const [cmsProperties, setCmsProperties] = useState<Property[] | null>(null);
   const [activeSlide, setActiveSlide] = useState(0);
-  const [loading, setLoading] = useState(isSupabaseConfigured);
 
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 40 });
 
   useEffect(() => {
-    // Fetch all CMS data in parallel — page renders immediately with fallback
-    Promise.all([
-      fetchHeroContent(),
-      fetchProperties(),
-      fetchPageContent("hero_settings"),
-    ]).then(([heroRes, propsRes, settingsRes]) => {
+    let mounted = true;
+
+    import("@/lib/cms").then(({ fetchHeroContent, fetchProperties, fetchPageContent }) =>
+      Promise.all([
+        fetchHeroContent(),
+        fetchProperties(),
+        fetchPageContent("hero_settings"),
+      ])
+    ).then(([heroRes, propsRes, settingsRes]) => {
+      if (!mounted) return;
       if (heroRes.data) setHero(heroRes.data);
       if (settingsRes.data?.content) {
         setHeroSettings({
@@ -114,8 +116,14 @@ export default function Index() {
         );
         setCmsProperties(filtered);
       }
-      setLoading(false);
+    }).catch(() => {
+      if (!mounted) return;
+      setCmsProperties([]);
     });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -149,8 +157,6 @@ export default function Index() {
     slides.push({ type: "video", url: hero.video_url });
   } else if (hero?.image_url) {
     slides.push({ type: "image", url: formatImageUrl(hero.image_url) });
-  } else {
-    slides.push({ type: "image", url: heroImg });
   }
 
   // Add fractional slide next if configured
@@ -187,13 +193,8 @@ export default function Index() {
       />
 
       {/* Hero */}
-      <section className="relative mt-16 md:mt-20 min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)] flex items-center justify-center overflow-hidden" aria-label="Hero">
-        {loading ? (
-          <div className="absolute inset-0 bg-[#0B0B0E] flex items-center justify-center">
-            <div className="absolute inset-0 dot-grid opacity-[0.03]" />
-            <Loader2 className="animate-spin text-primary" size={40} />
-          </div>
-        ) : (
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden" aria-label="Hero">
+        {slides.length > 0 ? (
           <div className="absolute inset-0" ref={emblaRef}>
             <div className="flex h-full">
               {slides.map((slide, index) => {
@@ -225,29 +226,20 @@ export default function Index() {
                       <img
                         src={slide.url}
                         alt={`Harsha Group premium commercial property - ${index === 0 ? "Harsha City Mall exterior view" : slide.isFractional ? "Fractional Investment Opportunity" : `commercial space showcase ${index + 1}`}`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover object-bottom"
                       />
                     )}
                     {slide.isFractional && (
-                      <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 bg-black/70 backdrop-blur-md px-5 py-2.5 rounded-full border border-primary/40 flex items-center gap-2 group cursor-pointer shadow-xl animate-pulse">
-                        <span className="text-white text-xs font-semibold whitespace-nowrap">Fractional Investment Model — Click to Invest</span>
+                      <Link
+                        to="/fractional-model"
+                        className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 bg-black/70 backdrop-blur-md px-5 py-2.5 rounded-full border border-primary/40 flex items-center gap-2 group cursor-pointer shadow-xl animate-pulse"
+                      >
+                        <span className="text-white text-xs font-semibold whitespace-nowrap">Fractional Investment Model — Click for More</span>
                         <ArrowRight size={14} className="text-primary group-hover:translate-x-1 transition-transform" />
-                      </div>
+                      </Link>
                     )}
                   </>
                 );
-
-                if (slide.isFractional) {
-                  return (
-                    <Link
-                      key={index}
-                      to="/fractional-model"
-                      className="flex-[0_0_100%] min-w-0 relative h-full cursor-pointer block overflow-hidden"
-                    >
-                      {slideContent}
-                    </Link>
-                  );
-                }
 
                 return (
                   <div key={index} className="flex-[0_0_100%] min-w-0 relative h-full overflow-hidden">
@@ -260,6 +252,10 @@ export default function Index() {
               <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80 pointer-events-none" />
             )}
           </div>
+        ) : (
+          <div className="absolute inset-0 bg-[linear-gradient(145deg,#111113_0%,#181611_48%,#09090b_100%)]">
+            <div className="absolute inset-0 dot-grid opacity-[0.035]" />
+          </div>
         )}
 
         {/* AI-themed background elements */}
@@ -267,7 +263,7 @@ export default function Index() {
 
         {/* Only show homepage details if the active slide is NOT a fractional slide */}
         {!(slides[activeSlide]?.isFractional) && (
-          <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
+          <div className="relative z-10 text-center px-4 max-w-5xl mx-auto pt-16 md:pt-20">
             {!heroSettings.hideHeading && (
               <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight mb-6 animate-fade-up text-white">
                 {heroHeading}
@@ -319,7 +315,7 @@ export default function Index() {
                 cmsProperties.map((p, i) => (
                   <ScrollReveal key={p.id} delay={i * 0.1}>
                     <PropertyCard
-                      image={resolveImageUrl(p.image_url) || ""}
+                      image={resolveCmsImageUrl(p.image_url) || ""}
                       video={p.video_url}
                       title={p.title}
                       location={p.location}

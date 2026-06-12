@@ -100,6 +100,27 @@ ON CONFLICT (section_key) DO NOTHING;
 -- We use Supabase Auth, so no separate table needed.
 -- Just configure an admin email in Supabase Auth.
 
+-- 5.5. INQUIRIES & FRACTIONAL INQUIRIES
+CREATE TABLE IF NOT EXISTS inquiries (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  name text NOT NULL,
+  phone text NOT NULL,
+  email text NOT NULL,
+  address text,
+  message text,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS fractional_inquiries (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  name text NOT NULL,
+  phone text NOT NULL,
+  email text NOT NULL,
+  city text NOT NULL,
+  investment_budget text NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+
 -- 6. STORAGE BUCKETS
 -- Run these in Supabase SQL Editor or create via Dashboard:
 -- INSERT INTO storage.buckets (id, name, public) VALUES ('property-images', 'property-images', true);
@@ -112,6 +133,8 @@ ALTER TABLE hero_content ENABLE ROW LEVEL SECURITY;
 ALTER TABLE properties ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gallery_images ENABLE ROW LEVEL SECURITY;
 ALTER TABLE page_content ENABLE ROW LEVEL SECURITY;
+ALTER TABLE inquiries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE fractional_inquiries ENABLE ROW LEVEL SECURITY;
 
 -- Public can read
 CREATE POLICY "Public read hero" ON hero_content FOR SELECT USING (true);
@@ -119,11 +142,17 @@ CREATE POLICY "Public read properties" ON properties FOR SELECT USING (true);
 CREATE POLICY "Public read gallery" ON gallery_images FOR SELECT USING (true);
 CREATE POLICY "Public read page_content" ON page_content FOR SELECT USING (true);
 
+-- Public can insert inquiries
+CREATE POLICY "Public insert inquiries" ON inquiries FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public insert fractional_inquiries" ON fractional_inquiries FOR INSERT WITH CHECK (true);
+
 -- Authenticated users can do everything (admin)
 CREATE POLICY "Admin full access hero" ON hero_content FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Admin full access properties" ON properties FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Admin full access gallery" ON gallery_images FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Admin full access page_content" ON page_content FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admin full access inquiries" ON inquiries FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admin full access fractional_inquiries" ON fractional_inquiries FOR ALL USING (auth.role() = 'authenticated');
 
 -- Storage policies (run in SQL editor)
 -- CREATE POLICY "Public read storage" ON storage.objects FOR SELECT USING (bucket_id IN ('property-images', 'gallery-images', 'hero-images'));

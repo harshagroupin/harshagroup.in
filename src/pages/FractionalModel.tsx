@@ -8,7 +8,7 @@ import FAQSection from "@/components/FAQSection";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import FractionalInvestForm from "@/components/FractionalInvestForm";
 import { ArrowRight, Sparkles, IndianRupee, PieChart, TrendingUp, Gift, Loader2 } from "lucide-react";
-import { fetchPageContent, resolveImageUrl, isSupabaseConfigured } from "@/lib/cms";
+import { fetchPageContent, isSupabaseConfigured } from "@/lib/cms";
 import { formatImageUrl, getYoutubeEmbed } from "@/lib/utils";
 
 interface FractionalContent {
@@ -114,8 +114,7 @@ export default function FractionalModel() {
 
       <Breadcrumb items={[{ label: "Fractional Model" }]} />
 
-      {/* Hero — Image or Video */}
-      <section className="relative mt-16 md:mt-20 min-h-[60vh] md:min-h-[70vh] flex items-center justify-center overflow-hidden" aria-label="Fractional model hero">
+      <section className="relative h-[55vh] min-h-[420px] flex items-center justify-center overflow-hidden" aria-label="Fractional model hero">
         {/* Media background */}
         <div className="absolute inset-0">
           {loading ? (
@@ -142,7 +141,7 @@ export default function FractionalModel() {
               />
             )
           ) : imageUrl ? (
-            <img src={imageUrl} alt="Harsha Group Fractional Investment Model — premium commercial property" className="w-full h-full object-cover" />
+            <img src={imageUrl} alt="Harsha Group Fractional Investment Model — premium commercial property" className="w-full h-full object-cover object-bottom" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/20 via-background to-primary/10" />
           )}
@@ -152,15 +151,10 @@ export default function FractionalModel() {
         <AnimatedBackground />
 
         {/* Hero text */}
-        <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
+        <div className="relative z-10 text-center px-4 max-w-4xl mx-auto pt-16 md:pt-20">
+
           <ScrollReveal>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-primary/30 text-primary text-sm font-medium mb-6">
-              <Sparkles size={16} />
-              First Time in India
-            </div>
-          </ScrollReveal>
-          <ScrollReveal>
-            <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight mb-6 text-white">
+            <h1 className="font-serif text-4xl md:text-6xl font-bold tracking-tight leading-tight mb-6 text-white">
               Fractional <span className="gold-text">Investment</span> Model
             </h1>
           </ScrollReveal>
@@ -211,7 +205,7 @@ export default function FractionalModel() {
       </section>
 
       {/* Process */}
-      <section className="section-padding bg-card/30 relative" aria-label="How fractional investment works">
+      <section className="pt-20 md:pt-28 pb-8 md:pb-10 px-4 md:px-8 bg-card/30 relative" aria-label="How fractional investment works">
         <div className="absolute inset-0 dot-grid opacity-[0.02] pointer-events-none" aria-hidden="true" />
         <div className="max-w-5xl mx-auto relative">
           <ScrollReveal>
@@ -241,16 +235,6 @@ export default function FractionalModel() {
             ))}
           </div>
 
-          {/* CTA — scroll to form */}
-          <ScrollReveal>
-            <div className="text-center mt-14">
-              <a href="#fractional-invest-form">
-                <Button className="gold-gradient text-primary-foreground px-8 h-12 text-base font-semibold hover:opacity-90 gold-glow-sm">
-                  Start Investing <ArrowRight size={18} className="ml-2" />
-                </Button>
-              </a>
-            </div>
-          </ScrollReveal>
         </div>
       </section>
 
