@@ -46,8 +46,8 @@ export default function About() {
         }}
       />
 
-      {/* Hero Slider — starts behind navbar (no pt-20) */}
-      <section className="relative h-[50vh] min-h-[400px] flex items-center justify-center overflow-hidden" aria-label="About hero">
+      {/* Hero Slider — starts below navbar */}
+      <section className="relative mt-16 md:mt-20 h-[50vh] min-h-[400px] flex items-center justify-center overflow-hidden" aria-label="About hero">
         <div className="absolute inset-0" ref={emblaRef}>
           <div className="flex h-full">
             {heroSlides.map((slide, i) => (

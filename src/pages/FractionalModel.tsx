@@ -6,8 +6,9 @@ import SEOHead from "@/components/SEOHead";
 import Breadcrumb from "@/components/Breadcrumb";
 import FAQSection from "@/components/FAQSection";
 import AnimatedBackground from "@/components/AnimatedBackground";
-import { ArrowRight, Sparkles, IndianRupee, PieChart, TrendingUp, Gift } from "lucide-react";
-import { fetchPageContent, resolveImageUrl } from "@/lib/cms";
+import FractionalInvestForm from "@/components/FractionalInvestForm";
+import { ArrowRight, Sparkles, IndianRupee, PieChart, TrendingUp, Gift, Loader2 } from "lucide-react";
+import { fetchPageContent, resolveImageUrl, isSupabaseConfigured } from "@/lib/cms";
 import { formatImageUrl, getYoutubeEmbed } from "@/lib/utils";
 
 interface FractionalContent {
@@ -43,12 +44,14 @@ const fractionalFAQs = [
 
 export default function FractionalModel() {
   const [content, setContent] = useState<FractionalContent | null>(null);
+  const [loading, setLoading] = useState(isSupabaseConfigured);
 
   useEffect(() => {
     fetchPageContent("fractional_model").then((res) => {
       if (res.data?.content) {
         setContent(res.data.content as FractionalContent);
       }
+      setLoading(false);
     });
   }, []);
 
@@ -94,7 +97,7 @@ export default function FractionalModel() {
   ];
 
   return (
-    <main className="pt-20">
+    <main>
       <SEOHead
         title="Fractional Investment Model — India's First in Commercial Real Estate | Harsha Group"
         description="Discover Harsha Group's pioneering fractional ownership model in commercial real estate. Invest with minimal amount, earn rental income + capital appreciation. India's first fractional investment opportunity in Indirapuram, Ghaziabad."
@@ -112,10 +115,14 @@ export default function FractionalModel() {
       <Breadcrumb items={[{ label: "Fractional Model" }]} />
 
       {/* Hero — Image or Video */}
-      <section className="relative min-h-[60vh] md:min-h-[70vh] flex items-center justify-center overflow-hidden" aria-label="Fractional model hero">
+      <section className="relative mt-16 md:mt-20 min-h-[60vh] md:min-h-[70vh] flex items-center justify-center overflow-hidden" aria-label="Fractional model hero">
         {/* Media background */}
         <div className="absolute inset-0">
-          {mediaType === "video" && videoUrl ? (
+          {loading ? (
+            <div className="w-full h-full bg-[#0B0B0E] flex items-center justify-center">
+              <Loader2 className="animate-spin text-primary" size={36} />
+            </div>
+          ) : mediaType === "video" && videoUrl ? (
             getYoutubeEmbed(videoUrl, true) ? (
               <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <iframe
@@ -163,11 +170,11 @@ export default function FractionalModel() {
             </p>
           </ScrollReveal>
           <ScrollReveal>
-            <Link to="/contact">
+            <a href="#fractional-invest-form">
               <Button className="gold-gradient text-primary-foreground px-8 h-12 text-base font-semibold hover:opacity-90 gold-glow-sm">
                 Start Investing <ArrowRight size={18} className="ml-2" />
               </Button>
-            </Link>
+            </a>
           </ScrollReveal>
         </div>
       </section>
@@ -234,18 +241,21 @@ export default function FractionalModel() {
             ))}
           </div>
 
-          {/* CTA */}
+          {/* CTA — scroll to form */}
           <ScrollReveal>
             <div className="text-center mt-14">
-              <Link to="/contact">
+              <a href="#fractional-invest-form">
                 <Button className="gold-gradient text-primary-foreground px-8 h-12 text-base font-semibold hover:opacity-90 gold-glow-sm">
-                  Contact Us to Invest <ArrowRight size={18} className="ml-2" />
+                  Start Investing <ArrowRight size={18} className="ml-2" />
                 </Button>
-              </Link>
+              </a>
             </div>
           </ScrollReveal>
         </div>
       </section>
+
+      {/* Fractional Investment Form — dedicated lead capture */}
+      <FractionalInvestForm inline />
 
       {/* FAQ Section */}
       <section className="relative">

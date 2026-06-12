@@ -179,6 +179,23 @@ export async function submitInquiry(inquiry: { name: string; phone: string; emai
   return supabase.from('inquiries').insert([inquiry]);
 }
 
+export async function submitFractionalInquiry(lead: {
+  name: string;
+  phone: string;
+  email: string;
+  city: string;
+  investment_budget: string;
+}) {
+  // Saves to dedicated fractional_inquiries table (separate from general inquiries)
+  return supabase.from('fractional_inquiries').insert([{
+    name: lead.name,
+    phone: lead.phone,
+    email: lead.email,
+    city: lead.city,
+    investment_budget: lead.investment_budget,
+  }]);
+}
+
 // ──────────────────────────── Dummy Image Resolver ────────────────────────────
 import officeImg1 from "@/assets/office-space-1.jpg";
 import officeImg2 from "@/assets/office-space-2.jpg";

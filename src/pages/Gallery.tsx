@@ -3,8 +3,8 @@ import ScrollReveal from "@/components/ScrollReveal";
 import SEOHead from "@/components/SEOHead";
 import Breadcrumb from "@/components/Breadcrumb";
 import AnimatedBackground from "@/components/AnimatedBackground";
-import { X, Play, Loader2, ImageIcon, ChevronLeft, ChevronRight } from "lucide-react";
-import { fetchGalleryImages, fetchProperties, fetchPageContent, type GalleryImage, type Property, resolveImageUrl } from "@/lib/cms";
+import { X, Play, ImageIcon, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { fetchGalleryImages, fetchProperties, fetchPageContent, isSupabaseConfigured, type GalleryImage, type Property, resolveImageUrl } from "@/lib/cms";
 import useEmblaCarousel from "embla-carousel-react";
 
 // Static fallback
@@ -46,10 +46,11 @@ const getYoutubeThumbnail = (url: string): string | null => {
 
 export default function Gallery() {
   const [lightbox, setLightbox] = useState<number | null>(null);
+  // null = not yet fetched (show fallback), [] = fetched but empty, [...] = has CMS items
   const [cmsItems, setCmsItems] = useState<GalleryImage[] | null>(null);
-  const [loading, setLoading] = useState(true);
   const [activeSlide, setActiveSlide] = useState(0);
   const [cmsSlides, setCmsSlides] = useState<string[] | null>(null);
+  const [loading, setLoading] = useState(isSupabaseConfigured);
 
   // Embla for hero slider
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 40 });
@@ -69,30 +70,37 @@ export default function Gallery() {
   }, [emblaApi]);
 
   useEffect(() => {
-    fetchPageContent("gallery_slides").then(({ data }) => {
-      if (data?.content && Array.isArray(data.content) && data.content.length > 0) {
-        setCmsSlides(data.content as string[]);
+    // Fetch CMS slides and gallery items in parallel
+    Promise.all([
+      fetchPageContent("gallery_slides"),
+      fetchGalleryImages(),
+      fetchProperties(),
+    ]).then(([slidesRes, galleryRes, propsRes]) => {
+      if (slidesRes.data?.content && Array.isArray(slidesRes.data.content) && slidesRes.data.content.length > 0) {
+        setCmsSlides(slidesRes.data.content as string[]);
       }
-    });
-    Promise.all([fetchGalleryImages(), fetchProperties()]).then(([galleryRes, propsRes]) => {
+
       let items: GalleryImage[] = [];
       if (galleryRes.data) {
         items = [...galleryRes.data];
       }
       if (propsRes.data) {
         const galleryProperties = propsRes.data
-          .filter((p) => p.features?.includes("gallery") || p.display_location?.split(',').includes("gallery"))
+          .filter(
+            (p) =>
+              p.features?.includes("gallery") ||
+              p.display_location?.split(",").includes("gallery")
+          )
           .map((p) => ({
             id: p.id,
             image_url: p.image_url || "",
             video_url: p.video_url,
-            media_type: (p.video_url ? "video" : "image") as 'image' | 'video',
+            media_type: (p.video_url ? "video" : "image") as "image" | "video",
             alt_text: p.title,
             sort_order: p.sort_order,
           }));
         items = [...items, ...galleryProperties];
       }
-      // Sort items by sort_order
       items.sort((a, b) => a.sort_order - b.sort_order);
       setCmsItems(items);
       setLoading(false);
@@ -115,70 +123,79 @@ export default function Gallery() {
       />
 
       {/* Hero Slider */}
-      <section className="relative h-[50vh] min-h-[360px] flex items-center justify-center overflow-hidden" aria-label="Gallery hero">
-        <div className="absolute inset-0" ref={emblaRef}>
-          <div className="flex h-full">
-            {(cmsSlides
-              ? cmsSlides.map((url, i) => ({ src: url, caption: `Harsha Group property gallery image ${i + 1}` }))
-              : heroSlides
-            ).map((slide, i) => (
-              <div key={i} className="flex-[0_0_100%] min-w-0 relative h-full">
-                <img
-                  src={slide.src}
-                  alt={slide.caption}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ))}
+      <section className="relative mt-16 md:mt-20 h-[50vh] min-h-[360px] flex items-center justify-center overflow-hidden" aria-label="Gallery hero">
+        {loading ? (
+          <div className="absolute inset-0 bg-[#0B0B0E] flex items-center justify-center">
+            <div className="absolute inset-0 dot-grid opacity-[0.03]" />
+            <Loader2 className="animate-spin text-primary" size={36} />
           </div>
-        </div>
-
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80 pointer-events-none" />
-        <AnimatedBackground />
-
-        {/* Arrows — only when multiple slides */}
-        {(cmsSlides || heroSlides).length > 1 && (
+        ) : (
           <>
-            <button
-              onClick={scrollPrev}
-              className="absolute left-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm border border-white/20 transition-all"
-              aria-label="Previous slide"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <button
-              onClick={scrollNext}
-              className="absolute right-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm border border-white/20 transition-all"
-              aria-label="Next slide"
-            >
-              <ChevronRight size={20} />
-            </button>
+            <div className="absolute inset-0" ref={emblaRef}>
+              <div className="flex h-full">
+                {(cmsSlides
+                  ? cmsSlides.map((url, i) => ({ src: url, caption: `Harsha Group property gallery image ${i + 1}` }))
+                  : heroSlides
+                ).map((slide, i) => (
+                  <div key={i} className="flex-[0_0_100%] min-w-0 relative h-full">
+                    <img
+                      src={slide.src}
+                      alt={slide.caption}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80 pointer-events-none" />
+            <AnimatedBackground />
+
+            {/* Arrows — only when multiple slides */}
+            {(cmsSlides || heroSlides).length > 1 && (
+              <>
+                <button
+                  onClick={scrollPrev}
+                  className="absolute left-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm border border-white/20 transition-all"
+                  aria-label="Previous slide"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <button
+                  onClick={scrollNext}
+                  className="absolute right-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm border border-white/20 transition-all"
+                  aria-label="Next slide"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </>
+            )}
+
+            {/* Title */}
+            <div className="relative z-10 text-center px-4">
+              <h1 className="font-serif text-4xl md:text-6xl font-bold mb-4 text-white">
+                Our <span className="gold-text">Gallery</span>
+              </h1>
+              <p className="text-white/80 text-lg">A glimpse into our premium commercial spaces and developments.</p>
+            </div>
+
+            {/* Dot indicators — only when multiple slides */}
+            {(cmsSlides || heroSlides).length > 1 && (
+              <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+                {(cmsSlides || heroSlides).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => emblaApi?.scrollTo(i)}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      i === activeSlide ? "bg-primary w-6" : "bg-white/40 hover:bg-white/70"
+                    }`}
+                    aria-label={`Go to slide ${i + 1}`}
+                  />
+                ))}
+              </div>
+            )}
           </>
-        )}
-
-        {/* Title */}
-        <div className="relative z-10 text-center px-4">
-          <h1 className="font-serif text-4xl md:text-6xl font-bold mb-4 text-white">
-            Our <span className="gold-text">Gallery</span>
-          </h1>
-          <p className="text-white/80 text-lg">A glimpse into our premium commercial spaces and developments.</p>
-        </div>
-
-        {/* Dot indicators — only when multiple slides */}
-        {(cmsSlides || heroSlides).length > 1 && (
-          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-            {(cmsSlides || heroSlides).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => emblaApi?.scrollTo(i)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  i === activeSlide ? "bg-primary w-6" : "bg-white/40 hover:bg-white/70"
-                }`}
-                aria-label={`Go to slide ${i + 1}`}
-              />
-            ))}
-          </div>
         )}
       </section>
 
@@ -187,11 +204,8 @@ export default function Gallery() {
       {/* Gallery Grid */}
       <section className="section-padding" aria-label="Property gallery">
         <div className="max-w-7xl mx-auto">
-          {loading ? (
-            <div className="flex justify-center py-20">
-              <Loader2 className="animate-spin text-primary" size={32} />
-            </div>
-          ) : cmsItems !== null ? (
+          {/* Show fallback immediately; replace with CMS data when available */}
+          {cmsItems !== null ? (
             cmsItems.length > 0 ? (
               /* CMS Gallery */
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { fetchHeroContent, updateHeroContent, uploadImage, fetchPageContent, updatePageContent, type HeroContent } from "@/lib/cms";
 import { formatImageUrl, getYoutubeEmbed } from "@/lib/utils";
 import ImageUploader from "./ImageUploader";
+import MediaUploader from "./MediaUploader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,12 +19,16 @@ export default function HeroManager() {
     hidePrimaryBtn: boolean;
     hideSecondaryBtn: boolean;
     slides: string[];
+    fractionalMediaUrl: string;
+    fractionalMediaType: "image" | "video";
   }>({
     hideHeading: false,
     hideSubheading: false,
     hidePrimaryBtn: false,
     hideSecondaryBtn: false,
     slides: [],
+    fractionalMediaUrl: "",
+    fractionalMediaType: "image",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -45,6 +50,8 @@ export default function HeroManager() {
           hidePrimaryBtn: !!settingsRes.data.content.hidePrimaryBtn,
           hideSecondaryBtn: !!settingsRes.data.content.hideSecondaryBtn,
           slides: settingsRes.data.content.slides || [],
+          fractionalMediaUrl: settingsRes.data.content.fractionalMediaUrl || "",
+          fractionalMediaType: settingsRes.data.content.fractionalMediaType || "image",
         });
       }
       setLoading(false);
@@ -246,6 +253,42 @@ export default function HeroManager() {
               ))}
             </div>
           )}
+
+          {/* Homepage Fractional Redirect Slide Preview */}
+          {settings.fractionalMediaUrl && (
+            <div className="glass rounded-2xl overflow-hidden relative group mt-6">
+              <div className="relative h-64">
+                {settings.fractionalMediaType === "video" ? (
+                  getYoutubeEmbed(settings.fractionalMediaUrl, true) ? (
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                      <iframe
+                        src={getYoutubeEmbed(settings.fractionalMediaUrl, true)!}
+                        className="absolute w-[200vw] h-[200vh] sm:w-[150vw] sm:h-[150vh] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        frameBorder="0"
+                        tabIndex={-1}
+                      />
+                    </div>
+                  ) : (
+                    <video
+                      src={settings.fractionalMediaUrl}
+                      className="w-full h-full object-cover"
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                    />
+                  )
+                ) : (
+                  <img src={formatImageUrl(settings.fractionalMediaUrl)} alt="Fractional slide preview" className="w-full h-full object-cover" />
+                )}
+                
+                <div className="absolute top-4 left-4 bg-primary/85 backdrop-blur-md px-4 py-1.5 rounded-full text-xs font-semibold shadow-xl border border-border/30 text-primary-foreground">
+                  Fractional Redirect Slide (Redirects to /fractional-model)
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Form */}
@@ -366,6 +409,23 @@ export default function HeroManager() {
               </div>
             </div>
           )}
+
+          {/* Homepage Fractional Slide */}
+          <div className="space-y-4 pt-4 border-t border-border/40">
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground">Homepage Fractional Slide</h3>
+              <p className="text-xs text-muted-foreground">This media appears in the homepage hero slider and redirects to the Fractional Model page when clicked.</p>
+            </div>
+            <MediaUploader
+              bucket="hero-images"
+              currentImageUrl={settings.fractionalMediaType === "image" ? settings.fractionalMediaUrl : null}
+              currentVideoUrl={settings.fractionalMediaType === "video" ? settings.fractionalMediaUrl : null}
+              onImageUpload={(url) => setSettings({ ...settings, fractionalMediaUrl: url, fractionalMediaType: "image" })}
+              onImageRemove={() => setSettings({ ...settings, fractionalMediaUrl: "", fractionalMediaType: "image" })}
+              onVideoChange={(url) => setSettings({ ...settings, fractionalMediaUrl: url || "", fractionalMediaType: url ? "video" : "image" })}
+              label="Fractional Slide Media (Image/Video)"
+            />
+          </div>
 
           {/* Additional Slider Images */}
           <div className="space-y-4 pt-4 border-t border-border/40">

@@ -5,8 +5,8 @@ import ContactForm from "@/components/ContactForm";
 import SEOHead from "@/components/SEOHead";
 import Breadcrumb from "@/components/Breadcrumb";
 import AnimatedBackground from "@/components/AnimatedBackground";
-import { fetchProperties, resolveImageUrl, fetchPageContent, type Property } from "@/lib/cms";
-import { Loader2, Building2, ChevronLeft, ChevronRight } from "lucide-react";
+import { fetchProperties, resolveImageUrl, fetchPageContent, isSupabaseConfigured, type Property } from "@/lib/cms";
+import { Building2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 
 // Hero slide images
@@ -37,10 +37,10 @@ const fallbackProperties = [
 
 export default function OurSpaces() {
   const [cmsProperties, setCmsProperties] = useState<Property[] | null>(null);
-  const [loading, setLoading] = useState(true);
   const [activeSlide, setActiveSlide] = useState(0);
   const [cmsSlides, setCmsSlides] = useState<string[] | null>(null);
   const [enquiryMessage, setEnquiryMessage] = useState("");
+  const [loading, setLoading] = useState(isSupabaseConfigured);
 
   const handleEnquire = (title: string, location: string) => {
     const msg = `I am interested in the property: ${title}${location ? ` (${location})` : ""}. Please contact me with more details.`;
@@ -66,17 +66,19 @@ export default function OurSpaces() {
   }, [emblaApi]);
 
   useEffect(() => {
-    fetchPageContent("our_spaces_slides").then(({ data }) => {
-      if (data?.content && Array.isArray(data.content) && data.content.length > 0) {
-        setCmsSlides(data.content as string[]);
+    // Fire both fetches in parallel — page already rendered with fallback
+    Promise.all([
+      fetchPageContent("our_spaces_slides"),
+      fetchProperties(),
+    ]).then(([slidesRes, propsRes]) => {
+      if (slidesRes.data?.content && Array.isArray(slidesRes.data.content) && slidesRes.data.content.length > 0) {
+        setCmsSlides(slidesRes.data.content as string[]);
       }
-    });
-    fetchProperties().then(({ data, error }) => {
-      if (error) {
-        setCmsProperties(null);
-      } else {
-        const filtered = (data || []).filter(
-          (p) => p.features?.includes("our_spaces") || p.display_location?.split(',').includes("our_spaces")
+      if (!propsRes.error) {
+        const filtered = (propsRes.data || []).filter(
+          (p) =>
+            p.features?.includes("our_spaces") ||
+            p.display_location?.split(",").includes("our_spaces")
         );
         setCmsProperties(filtered);
       }
@@ -100,71 +102,80 @@ export default function OurSpaces() {
       />
 
       {/* Hero with auto-sliding carousel */}
-      <section className="relative h-[50vh] min-h-[360px] flex items-center justify-center overflow-hidden" aria-label="Our spaces hero">
-        {/* Embla viewport */}
-        <div className="absolute inset-0" ref={emblaRef}>
-          <div className="flex h-full">
-            {(cmsSlides
-              ? cmsSlides.map((url, i) => ({ src: url, caption: `Harsha Group commercial space showcase ${i + 1}` }))
-              : heroSlides
-            ).map((slide, i) => (
-              <div key={i} className="flex-[0_0_100%] min-w-0 relative h-full">
-                <img
-                  src={slide.src}
-                  alt={slide.caption}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ))}
+      <section className="relative mt-16 md:mt-20 h-[50vh] min-h-[360px] flex items-center justify-center overflow-hidden" aria-label="Our spaces hero">
+        {loading ? (
+          <div className="absolute inset-0 bg-[#0B0B0E] flex items-center justify-center">
+            <div className="absolute inset-0 dot-grid opacity-[0.03]" />
+            <Loader2 className="animate-spin text-primary" size={36} />
           </div>
-        </div>
-
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80 pointer-events-none" />
-        <AnimatedBackground />
-
-        {/* Arrows — only when multiple slides */}
-        {(cmsSlides || heroSlides).length > 1 && (
+        ) : (
           <>
-            <button
-              onClick={scrollPrev}
-              className="absolute left-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm border border-white/20 transition-all"
-              aria-label="Previous slide"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <button
-              onClick={scrollNext}
-              className="absolute right-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm border border-white/20 transition-all"
-              aria-label="Next slide"
-            >
-              <ChevronRight size={20} />
-            </button>
+            {/* Embla viewport */}
+            <div className="absolute inset-0" ref={emblaRef}>
+              <div className="flex h-full">
+                {(cmsSlides
+                  ? cmsSlides.map((url, i) => ({ src: url, caption: `Harsha Group commercial space showcase ${i + 1}` }))
+                  : heroSlides
+                ).map((slide, i) => (
+                  <div key={i} className="flex-[0_0_100%] min-w-0 relative h-full">
+                    <img
+                      src={slide.src}
+                      alt={slide.caption}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80 pointer-events-none" />
+            <AnimatedBackground />
+
+            {/* Arrows — only when multiple slides */}
+            {(cmsSlides || heroSlides).length > 1 && (
+              <>
+                <button
+                  onClick={scrollPrev}
+                  className="absolute left-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm border border-white/20 transition-all"
+                  aria-label="Previous slide"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <button
+                  onClick={scrollNext}
+                  className="absolute right-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm border border-white/20 transition-all"
+                  aria-label="Next slide"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </>
+            )}
+
+            {/* Text */}
+            <div className="relative z-10 text-center px-4">
+              <h1 className="font-serif text-4xl md:text-6xl font-bold mb-4 text-white">
+                Our <span className="gold-text">Spaces</span>
+              </h1>
+              <p className="text-white/80 text-lg">Premium offices, retail outlets and mall spaces — curated for growth.</p>
+            </div>
+
+            {/* Dot indicators — only when multiple slides */}
+            {(cmsSlides || heroSlides).length > 1 && (
+              <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+                {(cmsSlides || heroSlides).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => emblaApi?.scrollTo(i)}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      i === activeSlide ? "bg-primary w-6" : "bg-white/40 hover:bg-white/70"
+                    }`}
+                    aria-label={`Go to slide ${i + 1}`}
+                  />
+                ))}
+              </div>
+            )}
           </>
-        )}
-
-        {/* Text */}
-        <div className="relative z-10 text-center px-4">
-          <h1 className="font-serif text-4xl md:text-6xl font-bold mb-4 text-white">
-            Our <span className="gold-text">Spaces</span>
-          </h1>
-          <p className="text-white/80 text-lg">Premium offices, retail outlets and mall spaces — curated for growth.</p>
-        </div>
-
-        {/* Dot indicators — only when multiple slides */}
-        {(cmsSlides || heroSlides).length > 1 && (
-          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-            {(cmsSlides || heroSlides).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => emblaApi?.scrollTo(i)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  i === activeSlide ? "bg-primary w-6" : "bg-white/40 hover:bg-white/70"
-                }`}
-                aria-label={`Go to slide ${i + 1}`}
-              />
-            ))}
-          </div>
         )}
       </section>
 
@@ -173,11 +184,8 @@ export default function OurSpaces() {
       {/* Properties Grid */}
       <section className="section-padding" aria-label="Available commercial properties">
         <div className="max-w-7xl mx-auto">
-          {loading ? (
-            <div className="flex justify-center py-20">
-              <Loader2 className="animate-spin text-primary" size={32} />
-            </div>
-          ) : cmsProperties !== null ? (
+          {/* Show fallback immediately; replace with CMS data when available */}
+          {cmsProperties !== null ? (
             cmsProperties.length > 0 ? (
               /* CMS Properties */
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -204,7 +212,7 @@ export default function OurSpaces() {
               </div>
             )
           ) : (
-            /* Fallback static properties */
+            /* Fallback static properties — shown instantly before CMS loads */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {fallbackProperties.map((p, i) => (
                 <ScrollReveal key={i} delay={i * 0.06}>

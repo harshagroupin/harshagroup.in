@@ -1,5 +1,5 @@
-import { Link, useLocation } from "react-router-dom";
-import { ChevronRight, Home } from "lucide-react";
+import { useLocation } from "react-router-dom";
+
 
 interface BreadcrumbItem {
   label: string;
@@ -37,45 +37,11 @@ export default function Breadcrumb({ items }: BreadcrumbProps) {
     })),
   };
 
+  // Only inject JSON-LD for SEO — no visual UI rendered
   return (
-    <>
-      {/* JSON-LD */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-
-      {/* Visual breadcrumb */}
-      <nav
-        aria-label="Breadcrumb"
-        className="max-w-7xl mx-auto px-4 md:px-8 pt-24 pb-2"
-      >
-        <ol className="flex items-center gap-1.5 text-sm text-muted-foreground flex-wrap">
-          {fullItems.map((item, i) => {
-            const isLast = i === fullItems.length - 1;
-            return (
-              <li key={i} className="flex items-center gap-1.5">
-                {i === 0 && <Home size={14} className="text-primary/60" />}
-                {item.href && !isLast ? (
-                  <Link
-                    to={item.href}
-                    className="hover:text-primary transition-colors duration-200"
-                  >
-                    {item.label}
-                  </Link>
-                ) : (
-                  <span className={isLast ? "text-foreground font-medium" : ""}>
-                    {item.label}
-                  </span>
-                )}
-                {!isLast && (
-                  <ChevronRight size={12} className="text-muted-foreground/40" />
-                )}
-              </li>
-            );
-          })}
-        </ol>
-      </nav>
-    </>
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
   );
 }

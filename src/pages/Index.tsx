@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Building2, Shield, MapPin, TrendingUp, Star, Loader2 } from "lucide-react";
+import { Building2, Shield, MapPin, TrendingUp, Star, ArrowRight, Loader2 } from "lucide-react";
 import ScrollReveal from "@/components/ScrollReveal";
 import PropertyCard from "@/components/PropertyCard";
 import SEOHead from "@/components/SEOHead";
@@ -9,14 +9,11 @@ import FAQSection from "@/components/FAQSection";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useCounter } from "@/hooks/useCounter";
-import { fetchHeroContent, fetchProperties, fetchPageContent, resolveImageUrl, type HeroContent, type Property } from "@/lib/cms";
+import { fetchHeroContent, fetchProperties, fetchPageContent, resolveImageUrl, isSupabaseConfigured, type HeroContent, type Property } from "@/lib/cms";
 import { formatImageUrl, getYoutubeEmbed } from "@/lib/utils";
 import useEmblaCarousel from "embla-carousel-react";
 import heroImg from "@/assets/hero-mall.jpg";
-import officeImg1 from "@/assets/office-space-1.jpg";
-import shopImg1 from "@/assets/shop-space-1.jpg";
-import buildingImg from "@/assets/building-exterior.jpg";
-import officeImg2 from "@/assets/office-space-2.jpg";
+
 
 
 const stats = [
@@ -80,14 +77,23 @@ export default function Index() {
     hidePrimaryBtn: false,
     hideSecondaryBtn: false,
     slides: [] as string[],
+    fractionalMediaUrl: "",
+    fractionalMediaType: "image" as "image" | "video",
   });
+  // null = loading (show fallback), [] = loaded but empty, [...] = has CMS data
   const [cmsProperties, setCmsProperties] = useState<Property[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [loading, setLoading] = useState(isSupabaseConfigured);
+
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 40 });
 
   useEffect(() => {
-    Promise.all([fetchHeroContent(), fetchProperties(), fetchPageContent("hero_settings")]).then(([heroRes, propsRes, settingsRes]) => {
+    // Fetch all CMS data in parallel — page renders immediately with fallback
+    Promise.all([
+      fetchHeroContent(),
+      fetchProperties(),
+      fetchPageContent("hero_settings"),
+    ]).then(([heroRes, propsRes, settingsRes]) => {
       if (heroRes.data) setHero(heroRes.data);
       if (settingsRes.data?.content) {
         setHeroSettings({
@@ -96,27 +102,17 @@ export default function Index() {
           hidePrimaryBtn: !!settingsRes.data.content.hidePrimaryBtn,
           hideSecondaryBtn: !!settingsRes.data.content.hideSecondaryBtn,
           slides: settingsRes.data.content.slides || [],
+          fractionalMediaUrl: settingsRes.data.content.fractionalMediaUrl || "",
+          fractionalMediaType: settingsRes.data.content.fractionalMediaType || "image",
         });
       }
-      
-      if (propsRes.error) {
-        setCmsProperties(null);
-      } else {
-        const filtered = (propsRes.data || []).filter((p) => p.features?.includes("homepage") || p.display_location?.split(',').includes("homepage"));
+      if (!propsRes.error) {
+        const filtered = (propsRes.data || []).filter(
+          (p) =>
+            p.features?.includes("homepage") ||
+            p.display_location?.split(",").includes("homepage")
+        );
         setCmsProperties(filtered);
-      }
-      // Preload hero image to prevent blank space flash, but cap at 3s max
-      const heroData = heroRes.data;
-      if (heroData?.media_type !== "video") {
-        const imageUrl = heroData?.image_url ? formatImageUrl(heroData.image_url) : heroImg;
-        if (imageUrl) {
-          const img = new Image();
-          const timeout = setTimeout(() => setLoading(false), 3000); // max 3s wait
-          img.src = imageUrl;
-          img.onload = () => { clearTimeout(timeout); setLoading(false); };
-          img.onerror = () => { clearTimeout(timeout); setLoading(false); };
-          return;
-        }
       }
       setLoading(false);
     });
@@ -124,40 +120,53 @@ export default function Index() {
 
   useEffect(() => {
     if (!emblaApi) return;
+    const onSelect = () => {
+      setActiveSlide(emblaApi.selectedScrollSnap());
+    };
+    emblaApi.on("select", onSelect);
     const interval = setInterval(() => {
       emblaApi.scrollNext();
     }, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      emblaApi.off("select", onSelect);
+    };
   }, [emblaApi]);
 
   // Use CMS content if available, otherwise fallback to defaults
-  const heroHeading = hero?.heading || "Premium Commercial Spaces That Drive Business Growth";
-  const heroSubheading = hero?.subheading || "Invest | Lease | Grow with Harsha Group — Your trusted partner for premium commercial real estate in Indirapuram.";
+  const heroHeading =
+    hero?.heading || "Premium Commercial Spaces That Drive Business Growth";
+  const heroSubheading =
+    hero?.subheading ||
+    "Invest | Lease | Grow with Harsha Group — Your trusted partner for premium commercial real estate in Indirapuram.";
   const ctaPrimary = hero?.cta_primary_text || "Explore Properties";
   const ctaSecondary = hero?.cta_secondary_text || "Contact Now";
   const showVideo = hero?.media_type === "video" && hero?.video_url;
 
-  const slides = [];
+  // Build slides — always starts with fallback hero image (instant render)
+  const slides: { type: string; url: string; isFractional?: boolean }[] = [];
   if (showVideo && hero?.video_url) {
-    slides.push({ type: 'video', url: hero.video_url });
+    slides.push({ type: "video", url: hero.video_url });
   } else if (hero?.image_url) {
-    slides.push({ type: 'image', url: formatImageUrl(hero.image_url) });
+    slides.push({ type: "image", url: formatImageUrl(hero.image_url) });
   } else {
-    slides.push({ type: 'image', url: heroImg });
+    slides.push({ type: "image", url: heroImg });
   }
 
-  if (heroSettings.slides && heroSettings.slides.length > 0) {
-    heroSettings.slides.forEach(url => {
-      slides.push({ type: 'image', url: formatImageUrl(url) });
+  // Add fractional slide next if configured
+  if (heroSettings.fractionalMediaUrl) {
+    const fracMediaType = heroSettings.fractionalMediaType || "image";
+    slides.push({
+      type: fracMediaType,
+      url: formatImageUrl(heroSettings.fractionalMediaUrl),
+      isFractional: true
     });
   }
 
-  if (loading) {
-    return (
-      <main className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="animate-spin text-primary" size={48} />
-      </main>
-    );
+  if (heroSettings.slides && heroSettings.slides.length > 0) {
+    heroSettings.slides.forEach((url) => {
+      slides.push({ type: "image", url: formatImageUrl(url) });
+    });
   }
 
   return (
@@ -178,78 +187,116 @@ export default function Index() {
       />
 
       {/* Hero */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden" aria-label="Hero">
-        <div className="absolute inset-0" ref={emblaRef}>
-          <div className="flex h-full">
-            {slides.map((slide, index) => (
-              <div key={index} className="flex-[0_0_100%] min-w-0 relative h-full">
-                {slide.type === 'video' ? (
-                  getYoutubeEmbed(slide.url, true) ? (
-                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                      <iframe
-                        src={getYoutubeEmbed(slide.url, true)!}
-                        className="absolute w-[200vw] h-[200vh] sm:w-[150vw] sm:h-[150vh] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        frameBorder="0"
-                        tabIndex={-1}
-                        title="Harsha Group promotional video"
-                      />
-                    </div>
-                  ) : (
-                    <video
-                      src={slide.url}
-                      className="w-full h-full object-cover"
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                    />
-                  )
-                ) : (
-                  <img
-                    src={slide.url}
-                    alt={`Harsha Group premium commercial property - ${index === 0 ? "Harsha City Mall exterior view" : `commercial space showcase ${index + 1}`}`}
-                    className="w-full h-full object-cover"
-                  />
-                )}
-              </div>
-            ))}
+      <section className="relative mt-16 md:mt-20 min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)] flex items-center justify-center overflow-hidden" aria-label="Hero">
+        {loading ? (
+          <div className="absolute inset-0 bg-[#0B0B0E] flex items-center justify-center">
+            <div className="absolute inset-0 dot-grid opacity-[0.03]" />
+            <Loader2 className="animate-spin text-primary" size={40} />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80 pointer-events-none" />
-        </div>
+        ) : (
+          <div className="absolute inset-0" ref={emblaRef}>
+            <div className="flex h-full">
+              {slides.map((slide, index) => {
+                const slideContent = (
+                  <>
+                    {slide.type === 'video' ? (
+                      getYoutubeEmbed(slide.url, true) ? (
+                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                          <iframe
+                            src={getYoutubeEmbed(slide.url, true)!}
+                            className="absolute w-[200vw] h-[200vh] sm:w-[150vw] sm:h-[150vh] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            frameBorder="0"
+                            tabIndex={-1}
+                            title="Harsha Group promotional video"
+                          />
+                        </div>
+                      ) : (
+                        <video
+                          src={slide.url}
+                          className="w-full h-full object-cover"
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                        />
+                      )
+                    ) : (
+                      <img
+                        src={slide.url}
+                        alt={`Harsha Group premium commercial property - ${index === 0 ? "Harsha City Mall exterior view" : slide.isFractional ? "Fractional Investment Opportunity" : `commercial space showcase ${index + 1}`}`}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                    {slide.isFractional && (
+                      <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 bg-black/70 backdrop-blur-md px-5 py-2.5 rounded-full border border-primary/40 flex items-center gap-2 group cursor-pointer shadow-xl animate-pulse">
+                        <span className="text-white text-xs font-semibold whitespace-nowrap">Fractional Investment Model — Click to Invest</span>
+                        <ArrowRight size={14} className="text-primary group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    )}
+                  </>
+                );
+
+                if (slide.isFractional) {
+                  return (
+                    <Link
+                      key={index}
+                      to="/fractional-model"
+                      className="flex-[0_0_100%] min-w-0 relative h-full cursor-pointer block overflow-hidden"
+                    >
+                      {slideContent}
+                    </Link>
+                  );
+                }
+
+                return (
+                  <div key={index} className="flex-[0_0_100%] min-w-0 relative h-full overflow-hidden">
+                    {slideContent}
+                  </div>
+                );
+              })}
+            </div>
+            {!(slides[activeSlide]?.isFractional) && (
+              <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80 pointer-events-none" />
+            )}
+          </div>
+        )}
 
         {/* AI-themed background elements */}
         <AnimatedBackground />
 
-        <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
-          {!heroSettings.hideHeading && (
-            <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight mb-6 animate-fade-up text-white">
-              {heroHeading}
-            </h1>
-          )}
-          {!heroSettings.hideSubheading && (
-            <p className="text-lg md:text-xl text-white/80 mb-10 max-w-2xl mx-auto" style={{ animation: "fade-up 0.8s ease-out 0.2s both" }}>
-              {heroSubheading}
-            </p>
-          )}
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center" style={{ animation: "fade-up 0.8s ease-out 0.4s both" }}>
-            {!heroSettings.hidePrimaryBtn && (
-              <Link to="/our-spaces">
-                <Button className="gold-gradient text-primary-foreground px-8 h-12 text-base font-semibold hover:opacity-90 gold-glow-sm">
-                  {ctaPrimary}
-                </Button>
-              </Link>
+        {/* Only show homepage details if the active slide is NOT a fractional slide */}
+        {!(slides[activeSlide]?.isFractional) && (
+          <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
+            {!heroSettings.hideHeading && (
+              <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight mb-6 animate-fade-up text-white">
+                {heroHeading}
+              </h1>
             )}
-            {!heroSettings.hideSecondaryBtn && (
-              <Link to="/contact">
-                <Button variant="outline" className="border-primary/50 text-foreground px-8 h-12 text-base hover:bg-primary/10">
-                  {ctaSecondary}
-                </Button>
-              </Link>
+            {!heroSettings.hideSubheading && (
+              <p className="text-lg md:text-xl text-white/80 mb-10 max-w-2xl mx-auto" style={{ animation: "fade-up 0.8s ease-out 0.2s both" }}>
+                {heroSubheading}
+              </p>
             )}
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center" style={{ animation: "fade-up 0.8s ease-out 0.4s both" }}>
+              {!heroSettings.hidePrimaryBtn && (
+                <Link to="/our-spaces">
+                  <Button className="gold-gradient text-primary-foreground px-8 h-12 text-base font-semibold hover:opacity-90 gold-glow-sm">
+                    {ctaPrimary}
+                  </Button>
+                </Link>
+              )}
+              {!heroSettings.hideSecondaryBtn && (
+                <Link to="/contact">
+                  <Button variant="outline" className="border-primary/50 text-foreground px-8 h-12 text-base hover:bg-primary/10">
+                    {ctaSecondary}
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </section>
 
       {/* Featured Properties */}
@@ -292,15 +339,19 @@ export default function Index() {
                 </div>
               )
             ) : (
-              [
-                { image: officeImg1, title: "Premium Office Suite A", location: "Harsha City Mall, Indirapuram", price: "₹45,000/mo", area: "1,200 sq ft", type: "Office" },
-                { image: shopImg1, title: "Luxury Retail Outlet", location: "Ground Floor, Harsha Mall", price: "₹80,000/mo", area: "800 sq ft", type: "Shop" },
-                { image: buildingImg, title: "Corporate Office Tower", location: "Shakti Khand 2, Ghaziabad", price: "₹1.2 Cr", area: "3,500 sq ft", type: "Office" },
-                { image: officeImg2, title: "Co-Working Space", location: "Harsha Business Center", price: "₹25,000/mo", area: "500 sq ft", type: "Office" },
-              ].map((p, i) => (
-                <ScrollReveal key={i} delay={i * 0.1}>
-                  <PropertyCard {...p} minimal={true} showEnquire={false} />
-                </ScrollReveal>
+              /* Skeleton cards — no local image fallback, no content swap */
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="rounded-xl overflow-hidden border border-border/30 bg-card/40 animate-pulse">
+                  <div className="aspect-[4/3] bg-secondary/40" />
+                  <div className="p-4 space-y-2.5">
+                    <div className="h-3.5 bg-secondary/60 rounded w-3/4" />
+                    <div className="h-3 bg-secondary/40 rounded w-1/2" />
+                    <div className="flex justify-between mt-3">
+                      <div className="h-3 bg-secondary/40 rounded w-1/4" />
+                      <div className="h-3 bg-secondary/40 rounded w-1/4" />
+                    </div>
+                  </div>
+                </div>
               ))
             )}
           </div>
@@ -347,6 +398,85 @@ export default function Index() {
           ))}
         </div>
       </section>
+
+      {/* ─── FRACTIONAL INVESTMENT — EDITORIAL SECTION ─── */}
+      <section className="section-padding relative border-y border-border/30" aria-label="Fractional investment opportunity">
+        <div className="max-w-7xl mx-auto">
+          <ScrollReveal>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 border border-border/40 rounded-2xl overflow-hidden">
+
+              {/* Left — editorial copy */}
+              <div className="p-10 md:p-14 flex flex-col justify-center">
+                <p className="text-primary text-xs font-bold uppercase tracking-[0.2em] mb-5">
+                  Fractional Investment Model
+                </p>
+                <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-6">
+                  Invest in Prime
+                  <br />
+                  <span className="gold-text">Commercial Real Estate</span>
+                  <br />
+                  At Your Own Budget
+                </h2>
+                <p className="text-muted-foreground text-base leading-relaxed mb-8 max-w-md">
+                  Harsha Group's fractional ownership model lets you co-own a share of Harsha City Mall, Indirapuram — invest a fraction that suits <em>your</em> budget and earn rental income + capital appreciation.
+                </p>
+
+                {/* Clean proof stats — horizontal */}
+                <div className="flex flex-wrap gap-x-8 gap-y-4 mb-10 pb-10 border-b border-border/30">
+                  {[
+                    { num: "15+", label: "Years in real estate" },
+                    { num: "1,200+", label: "Investors trust us" },
+                    { num: "₹500Cr+", label: "Portfolio managed" },
+                  ].map((s, i) => (
+                    <div key={i}>
+                      <div className="font-serif text-2xl md:text-3xl font-bold gold-text">{s.num}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Link to="/fractional-model#fractional-invest-form">
+                    <Button className="gold-gradient text-primary-foreground px-7 h-11 font-semibold hover:opacity-90">
+                      Explore Investment Options
+                    </Button>
+                  </Link>
+                  <Link to="/fractional-model">
+                    <Button variant="ghost" className="px-7 h-11 text-foreground hover:bg-secondary/60">
+                      Learn More <ArrowRight size={15} className="ml-1.5" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Right — clean highlight list */}
+              <div className="bg-card/60 border-l border-border/30 p-10 md:p-14 flex flex-col justify-center">
+                <h3 className="font-serif text-lg font-bold mb-8 text-foreground/90">What you get as an investor</h3>
+                <ul className="space-y-6">
+                  {[
+                    { title: "Registered Ownership", desc: "Your share is legally registered under your name with full documentation." },
+                    { title: "Rental Income", desc: "Earn proportional monthly rental income from blue-chip commercial tenants." },
+                    { title: "Capital Appreciation", desc: "Benefit from long-term property value growth in Indirapuram's prime corridor." },
+                    { title: "Professional Management", desc: "Harsha Group handles all property operations — zero effort from your side." },
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-start gap-4">
+                      <span className="w-5 h-5 rounded-full border-2 border-primary/60 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="w-2 h-2 rounded-full bg-primary" />
+                      </span>
+                      <div>
+                        <div className="font-semibold text-sm mb-1">{item.title}</div>
+                        <p className="text-muted-foreground text-xs leading-relaxed">{item.desc}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+      {/* ─── END FRACTIONAL SECTION ─── */}
 
       {/* Channel Partners */}
       <section className="py-16 bg-card/30 overflow-hidden" aria-label="Channel partners">
