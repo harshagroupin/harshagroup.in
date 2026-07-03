@@ -3,6 +3,7 @@ import { ImageIcon, MapPin, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface Props {
+  id: string;
   image: string;
   video?: string | null;
   title: string;
@@ -16,7 +17,7 @@ interface Props {
   onEnquire?: (title: string, location: string) => void;
 }
 
-export default function PropertyCard({ image, video, title, location, price, area, type, features, minimal = false, showEnquire = true, onEnquire }: Props) {
+export default function PropertyCard({ id, image, video, title, location, price, area, type, features, minimal = false, showEnquire = true, onEnquire }: Props) {
   const hasVideo = video && video.trim().length > 0;
 
   // Extract YouTube embed URL
@@ -52,16 +53,15 @@ export default function PropertyCard({ image, video, title, location, price, are
 
   return (
     <div className="glass rounded-md overflow-hidden hover-tilt group h-full flex flex-col">
-      <div className="relative overflow-hidden h-72 flex-shrink-0 bg-secondary/30">
+      <Link to={`/property/${id}`} className="relative overflow-hidden h-72 flex-shrink-0 bg-secondary/30 block cursor-pointer group/image">
         {hasVideo ? (
           <>
             {/* Video thumbnail or embed */}
             {getYoutubeEmbed(video!) ? (
               <iframe
                 src={getYoutubeEmbed(video!)!}
-                className="w-full h-full"
+                className="w-full h-full pointer-events-none"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
                 title={title}
               />
             ) : (
@@ -75,7 +75,7 @@ export default function PropertyCard({ image, video, title, location, price, are
                 onMouseLeave={(e) => { (e.target as HTMLVideoElement).pause(); (e.target as HTMLVideoElement).currentTime = 0; }}
               />
             )}
-            <div className="absolute top-4 right-4 px-2.5 py-1 rounded-sm text-[10px] font-semibold bg-black/60 text-white backdrop-blur-md flex items-center gap-1 border border-white/10">
+            <div className="absolute top-4 right-4 px-2.5 py-1 rounded-sm text-[10px] font-semibold bg-black/60 text-white backdrop-blur-md flex items-center gap-1 border border-white/10 z-10">
               <Play size={10} className="fill-current" /> Video
             </div>
           </>
@@ -92,14 +92,14 @@ export default function PropertyCard({ image, video, title, location, price, are
           </div>
         )}
         {type && type.trim().length > 0 && (
-          <div className="absolute top-4 left-4 px-3 py-1 rounded-sm text-xs font-semibold bg-background/90 text-primary backdrop-blur-md border border-primary/20 uppercase tracking-wider">
+          <div className="absolute top-4 left-4 px-3 py-1 rounded-sm text-xs font-semibold bg-background/90 text-primary backdrop-blur-md border border-primary/20 uppercase tracking-wider z-10">
             {type}
           </div>
         )}
-      </div>
+      </Link>
       <div className="p-3 flex-1 flex flex-col">
         <Link
-          to="/our-spaces"
+          to={`/property/${id}`}
           className="flex-1 flex flex-col cursor-pointer group/info"
         >
           <h3 className="font-serif text-lg font-semibold mb-1 group-hover/info:text-primary transition-colors">{title}</h3>

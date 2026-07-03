@@ -88,6 +88,8 @@ export default function OurSpaces() {
                 <div key={`${slide.src}-${index}`} className="flex-[0_0_100%] min-w-0 relative h-full">
                   <img
                     src={slide.src}
+                    fetchPriority={index === 0 ? "high" : "low"}
+                    loading={index === 0 ? "eager" : "lazy"}
                     alt={slide.caption}
                     className="w-full h-full object-cover object-bottom"
                   />
@@ -125,9 +127,9 @@ export default function OurSpaces() {
 
         <div className="relative z-10 text-center px-4 pt-16 md:pt-20">
           <h1 className="font-serif text-4xl md:text-6xl font-bold mb-4 text-white">
-            Our <span className="gold-text">Spaces</span>
+            Shops & <span className="gold-text">Office Spaces</span> in Indirapuram
           </h1>
-          <p className="text-white/80 text-lg">Premium offices, retail outlets and mall spaces curated for growth.</p>
+          <p className="text-white/80 text-lg">Premium commercial properties in Ghaziabad curated for business growth.</p>
         </div>
 
         {slideItems.length > 1 && (
@@ -156,6 +158,7 @@ export default function OurSpaces() {
                 {cmsProperties.map((property, index) => (
                   <ScrollReveal key={property.id} delay={index * 0.06}>
                     <PropertyCard
+                      id={property.id}
                       image={resolveImageUrl(property.image_url) || ""}
                       video={property.video_url}
                       title={property.title}

@@ -42,6 +42,7 @@ export default function Footer() {
                 { to: "/fractional-model", label: "Fractional Model" },
                 { to: "/gallery", label: "Gallery" },
                 { to: "/contact", label: "Contact" },
+                { to: "/terms-and-conditions", label: "Terms & Conditions" },
               ].map((l) => (
                 <Link key={l.to} to={l.to} className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   {l.label}
@@ -82,7 +83,13 @@ export default function Footer() {
         </div>
 
         <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} Harsha Group. All rights reserved.</p>
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-6">
+            <p>© {new Date().getFullYear()} Harsha Group. All rights reserved.</p>
+            <span className="hidden sm:inline text-muted-foreground/30">|</span>
+            <Link to="/terms-and-conditions" className="hover:text-primary transition-colors text-xs underline underline-offset-4 decoration-muted-foreground/30 hover:decoration-primary">
+              Terms & Conditions
+            </Link>
+          </div>
           <p className="text-xs text-muted-foreground/50">
             Premium Commercial Real Estate in Indirapuram, Ghaziabad
           </p>

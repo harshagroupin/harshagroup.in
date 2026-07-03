@@ -5,7 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import ScrollReveal from "./ScrollReveal";
 import { submitInquiry } from "@/lib/cms";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function ContactForm({ initialMessage }: { initialMessage?: string } = {}) {
   const { toast } = useToast();
@@ -34,6 +35,7 @@ export default function ContactForm({ initialMessage }: { initialMessage?: strin
     address: "",
     message: autoMessage,
   });
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   // When initialMessage or URL params change, update the message and scroll to form
   useEffect(() => {
@@ -52,6 +54,10 @@ export default function ContactForm({ initialMessage }: { initialMessage?: strin
       toast({ title: "Please fill in all required fields", variant: "destructive" });
       return;
     }
+    if (!acceptedTerms) {
+      toast({ title: "Please accept the terms and conditions to proceed", variant: "destructive" });
+      return;
+    }
     setLoading(true);
     try {
       const { error } = await submitInquiry({
@@ -66,6 +72,7 @@ export default function ContactForm({ initialMessage }: { initialMessage?: strin
 
       toast({ title: "Application Submitted!", description: "We'll get back to you shortly." });
       setForm({ name: "", phone: "", email: "", address: "", message: "" });
+      setAcceptedTerms(false);
     } catch (err: any) {
       console.error("Error submitting contact form:", err);
       toast({ title: "Something went wrong", description: err.message || "Please try again later.", variant: "destructive" });
@@ -144,10 +151,36 @@ export default function ContactForm({ initialMessage }: { initialMessage?: strin
               className="bg-secondary/50 border-border/40 min-h-[120px]"
               maxLength={1000}
             />
+            
+            <div className="flex items-start space-x-3 py-1">
+              <Checkbox
+                id="contact-terms"
+                checked={acceptedTerms}
+                onCheckedChange={(checked) => setAcceptedTerms(!!checked)}
+                className="mt-0.5 border-border/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground focus:ring-1 focus:ring-primary"
+              />
+              <label
+                htmlFor="contact-terms"
+                className="text-xs md:text-sm text-muted-foreground leading-normal cursor-pointer select-none"
+              >
+                I accept the{" "}
+                <Link 
+                  to="/terms-and-conditions" 
+                  className="text-primary hover:underline hover:text-primary/95 underline-offset-4 font-semibold text-[#cda052]"
+                  onClick={(e) => {
+                    // Stop event propagation to avoid triggering label click
+                    e.stopPropagation();
+                  }}
+                >
+                  terms and conditions
+                </Link>{" "}
+                for receiving communication via SMS, WhatsApp, RCS, or Email from Harsha Group.
+              </label>
+            </div>
             <Button
               type="submit"
-              disabled={loading}
-              className="w-full h-12 gold-gradient text-primary-foreground font-semibold text-base hover:opacity-90 transition-opacity"
+              disabled={loading || !acceptedTerms}
+              className="w-full h-12 gold-gradient text-primary-foreground font-semibold text-base hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Submitting..." : "Submit Enquiry"}
             </Button>

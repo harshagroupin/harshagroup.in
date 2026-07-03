@@ -78,6 +78,9 @@ export default function Index() {
     slides: [] as string[],
     fractionalMediaUrl: "",
     fractionalMediaType: "image" as "image" | "video",
+    mobileImageUrl: "",
+    mobileFractionalMediaUrl: "",
+    useLocalFallback: false,
   });
   // null = loading (show fallback), [] = loaded but empty, [...] = has CMS data
   const [cmsProperties, setCmsProperties] = useState<Property[] | null>(null);
@@ -106,6 +109,9 @@ export default function Index() {
           slides: settingsRes.data.content.slides || [],
           fractionalMediaUrl: settingsRes.data.content.fractionalMediaUrl || "",
           fractionalMediaType: settingsRes.data.content.fractionalMediaType || "image",
+          mobileImageUrl: settingsRes.data.content.mobileImageUrl || "",
+          mobileFractionalMediaUrl: settingsRes.data.content.mobileFractionalMediaUrl || "",
+          useLocalFallback: !!settingsRes.data.content.useLocalFallback,
         });
       }
       if (!propsRes.error) {
@@ -151,12 +157,25 @@ export default function Index() {
   const ctaSecondary = hero?.cta_secondary_text || "Contact Now";
   const showVideo = hero?.media_type === "video" && hero?.video_url;
 
-  // Build slides — always starts with fallback hero image (instant render)
-  const slides: { type: string; url: string; isFractional?: boolean }[] = [];
+  // Build slides — check if we should prepend the local high-performance fallback first
+  const slides: { type: string; url: string; mobileUrl?: string; isFractional?: boolean }[] = [];
+  
+  if (heroSettings.useLocalFallback) {
+    slides.push({
+      type: "image",
+      url: "/main-page-harsha-group.png",
+      mobileUrl: heroSettings.mobileImageUrl ? formatImageUrl(heroSettings.mobileImageUrl) : undefined
+    });
+  }
+
   if (showVideo && hero?.video_url) {
     slides.push({ type: "video", url: hero.video_url });
   } else if (hero?.image_url) {
-    slides.push({ type: "image", url: formatImageUrl(hero.image_url) });
+    slides.push({ 
+      type: "image", 
+      url: formatImageUrl(hero.image_url), 
+      mobileUrl: heroSettings.mobileImageUrl ? formatImageUrl(heroSettings.mobileImageUrl) : undefined 
+    });
   }
 
   // Add fractional slide next if configured
@@ -165,6 +184,7 @@ export default function Index() {
     slides.push({
       type: fracMediaType,
       url: formatImageUrl(heroSettings.fractionalMediaUrl),
+      mobileUrl: heroSettings.mobileFractionalMediaUrl ? formatImageUrl(heroSettings.mobileFractionalMediaUrl) : undefined,
       isFractional: true
     });
   }
@@ -223,11 +243,18 @@ export default function Index() {
                         />
                       )
                     ) : (
-                      <img
-                        src={slide.url}
-                        alt={`Harsha Group premium commercial property - ${index === 0 ? "Harsha City Mall exterior view" : slide.isFractional ? "Fractional Investment Opportunity" : `commercial space showcase ${index + 1}`}`}
-                        className="w-full h-full object-cover object-bottom"
-                      />
+                      <picture>
+                        {slide.mobileUrl && (
+                          <source media="(max-width: 768px)" srcSet={slide.mobileUrl} />
+                        )}
+                        <img
+                          src={slide.url}
+                          fetchPriority={index === 0 ? "high" : "low"}
+                          loading={index === 0 ? "eager" : "lazy"}
+                          alt={`Harsha Group premium commercial property - ${index === 0 ? "Harsha City Mall exterior view" : slide.isFractional ? "Fractional Investment Opportunity" : `commercial space showcase ${index + 1}`}`}
+                          className="w-full h-full object-cover object-bottom"
+                        />
+                      </picture>
                     )}
                     {slide.isFractional && (
                       <Link
@@ -315,6 +342,7 @@ export default function Index() {
                 cmsProperties.map((p, i) => (
                   <ScrollReveal key={p.id} delay={i * 0.1}>
                     <PropertyCard
+                      id={p.id}
                       image={resolveCmsImageUrl(p.image_url) || ""}
                       video={p.video_url}
                       title={p.title}

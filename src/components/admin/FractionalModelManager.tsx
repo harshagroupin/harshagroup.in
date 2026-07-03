@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import MediaUploader from "@/components/admin/MediaUploader";
+import ImageUploader from "./ImageUploader";
 import { Save, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,6 +18,7 @@ export default function FractionalModelManager() {
     "India's first fractional ownership model in commercial real estate — invest smart, earn big."
   );
   const [imageUrl, setImageUrl] = useState("");
+  const [mobileImageUrl, setMobileImageUrl] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
 
   useEffect(() => {
@@ -28,6 +30,7 @@ export default function FractionalModelManager() {
         if (c.heading) setHeading(c.heading);
         if (c.subheading) setSubheading(c.subheading);
         if (c.image_url) setImageUrl(c.image_url);
+        if (c.mobile_image_url) setMobileImageUrl(c.mobile_image_url);
         if (c.video_url) setVideoUrl(c.video_url);
       }
       setLoading(false);
@@ -40,6 +43,7 @@ export default function FractionalModelManager() {
       heading,
       subheading,
       image_url: imageUrl,
+      mobile_image_url: mobileImageUrl,
       video_url: videoUrl,
       media_type: videoUrl ? "video" : "image",
     };
@@ -112,8 +116,19 @@ export default function FractionalModelManager() {
           onImageUpload={(url) => setImageUrl(url)}
           onImageRemove={() => setImageUrl("")}
           onVideoChange={(url) => setVideoUrl(url || "")}
-          label="Hero Image or Video"
+          label="Hero Image or Video (Desktop 1920:1080)"
         />
+        
+        {/* Mobile Header image uploader */}
+        <div className="border-t border-border/20 pt-4 mt-2">
+          <ImageUploader
+            bucket="hero-images"
+            currentUrl={mobileImageUrl}
+            onUpload={(url) => setMobileImageUrl(url)}
+            onRemove={() => setMobileImageUrl("")}
+            label="Mobile Hero Image (Portrait 9:16 - Optional)"
+          />
+        </div>
       </div>
     </div>
   );

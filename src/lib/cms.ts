@@ -98,6 +98,15 @@ export async function deleteProperty(id: string) {
   return supabase.from('properties').delete().eq('id', id);
 }
 
+export async function fetchPropertyById(id: string) {
+  const { data, error } = await supabase
+    .from('properties')
+    .select('*')
+    .eq('id', id)
+    .single();
+  return { data: data as Property | null, error };
+}
+
 // ──────────────────────────── Gallery ────────────────────────────
 export async function fetchGalleryImages() {
   const { data, error } = await supabase

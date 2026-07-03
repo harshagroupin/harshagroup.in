@@ -67,6 +67,8 @@ export default function About() {
                 <div key={`${slide.src}-${index}`} className="flex-[0_0_100%] min-w-0 relative h-full">
                   <img
                     src={slide.src}
+                    fetchPriority={index === 0 ? "high" : "low"}
+                    loading={index === 0 ? "eager" : "lazy"}
                     alt={slide.caption}
                     className="w-full h-full object-cover object-bottom"
                   />

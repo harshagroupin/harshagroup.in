@@ -21,6 +21,9 @@ export default function HeroManager() {
     slides: string[];
     fractionalMediaUrl: string;
     fractionalMediaType: "image" | "video";
+    mobileImageUrl: string;
+    mobileFractionalMediaUrl: string;
+    useLocalFallback: boolean;
   }>({
     hideHeading: false,
     hideSubheading: false,
@@ -29,6 +32,9 @@ export default function HeroManager() {
     slides: [],
     fractionalMediaUrl: "",
     fractionalMediaType: "image",
+    mobileImageUrl: "",
+    mobileFractionalMediaUrl: "",
+    useLocalFallback: false,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -52,6 +58,9 @@ export default function HeroManager() {
           slides: settingsRes.data.content.slides || [],
           fractionalMediaUrl: settingsRes.data.content.fractionalMediaUrl || "",
           fractionalMediaType: settingsRes.data.content.fractionalMediaType || "image",
+          mobileImageUrl: settingsRes.data.content.mobileImageUrl || "",
+          mobileFractionalMediaUrl: settingsRes.data.content.mobileFractionalMediaUrl || "",
+          useLocalFallback: !!settingsRes.data.content.useLocalFallback,
         });
       }
       setLoading(false);
@@ -339,6 +348,26 @@ export default function HeroManager() {
                   className="bg-secondary/50 border-border/40 text-sm"
                 />
               </div>
+
+              {/* Mobile version uploader */}
+              <div className="border-t border-border/20 pt-4 mt-2 space-y-4">
+                <ImageUploader
+                  bucket="hero-images"
+                  currentUrl={settings.mobileImageUrl}
+                  onUpload={(url) => setSettings({ ...settings, mobileImageUrl: url })}
+                  onRemove={() => setSettings({ ...settings, mobileImageUrl: "" })}
+                  label="Mobile Background Image (Portrait 9:16 - Optional)"
+                />
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Or paste mobile image URL directly</label>
+                  <Input
+                    value={settings.mobileImageUrl || ""}
+                    onChange={(e) => setSettings({ ...settings, mobileImageUrl: e.target.value })}
+                    placeholder="https://example.com/image-mobile.jpg"
+                    className="bg-secondary/50 border-border/40 text-sm"
+                  />
+                </div>
+              </div>
             </div>
           )}
 
@@ -425,6 +454,18 @@ export default function HeroManager() {
               onVideoChange={(url) => setSettings({ ...settings, fractionalMediaUrl: url || "", fractionalMediaType: url ? "video" : "image" })}
               label="Fractional Slide Media (Image/Video)"
             />
+
+            {settings.fractionalMediaType === "image" && (
+              <div className="pt-2">
+                <ImageUploader
+                  bucket="hero-images"
+                  currentUrl={settings.mobileFractionalMediaUrl}
+                  onUpload={(url) => setSettings({ ...settings, mobileFractionalMediaUrl: url })}
+                  onRemove={() => setSettings({ ...settings, mobileFractionalMediaUrl: "" })}
+                  label="Mobile Fractional Slide Image (Portrait 9:16 - Optional)"
+                />
+              </div>
+            )}
           </div>
 
           {/* Additional Slider Images */}
@@ -448,6 +489,18 @@ export default function HeroManager() {
               )}
               <input type="file" accept="image/*" onChange={handleSlideUpload} disabled={slideUploading} className="hidden" />
             </label>
+          </div>
+
+          {/* Local Fallback Toggle */}
+          <div className="space-y-4 pt-4 border-t border-border/40 flex items-center justify-between">
+            <div className="space-y-0.5">
+              <h3 className="text-sm font-semibold text-muted-foreground">Use Local Fallback Image</h3>
+              <p className="text-xs text-muted-foreground max-w-sm">Enable to show the high-performance local image (main-page-harsha-group.png) as the first slide for instant LCP rendering.</p>
+            </div>
+            <Switch 
+              checked={settings.useLocalFallback} 
+              onCheckedChange={(c) => setSettings({ ...settings, useLocalFallback: c })} 
+            />
           </div>
 
           {/* Heading with Toggle */}

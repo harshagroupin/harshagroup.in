@@ -58,6 +58,7 @@ export default function FractionalModel() {
   const heading = content?.heading || "Fractional Investment Model";
   const subheading = content?.subheading || "India's first fractional ownership model in commercial real estate — invest smart, earn big.";
   const imageUrl = content?.image_url ? formatImageUrl(content.image_url) : null;
+  const mobileImageUrl = content?.mobile_image_url ? formatImageUrl(content.mobile_image_url) : null;
   const videoUrl = content?.video_url || null;
   const mediaType = content?.media_type || (videoUrl ? "video" : "image");
 
@@ -141,7 +142,18 @@ export default function FractionalModel() {
               />
             )
           ) : imageUrl ? (
-            <img src={imageUrl} alt="Harsha Group Fractional Investment Model — premium commercial property" className="w-full h-full object-cover object-bottom" />
+            <picture>
+              {mobileImageUrl && (
+                <source media="(max-width: 768px)" srcSet={mobileImageUrl} />
+              )}
+              <img 
+                src={imageUrl} 
+                fetchPriority="high"
+                loading="eager"
+                alt="Harsha Group Fractional Investment Model — premium commercial property" 
+                className="w-full h-full object-cover object-bottom" 
+              />
+            </picture>
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/20 via-background to-primary/10" />
           )}
@@ -155,7 +167,7 @@ export default function FractionalModel() {
 
           <ScrollReveal>
             <h1 className="font-serif text-4xl md:text-6xl font-bold tracking-tight leading-tight mb-6 text-white">
-              Fractional <span className="gold-text">Investment</span> Model
+              Fractional <span className="gold-text">Ownership</span> Model
             </h1>
           </ScrollReveal>
           <ScrollReveal>
